@@ -5,7 +5,7 @@ class ProductCollection extends JSonResource
 {
     public function toArray($request){
         return [
-            'data'=>PRoductResource::collection($this->collection),
+            'data'=>ProductResource::collection($this->collection),
         ]  ;  }
 }
 
