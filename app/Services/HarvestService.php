@@ -1,5 +1,5 @@
 <?php
-namespace App\Services ;
+namespace App\Services;
 
 use App\Enums\HarvestStatus;
 use Illuminate\Support\Facades\Auth;

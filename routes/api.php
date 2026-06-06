@@ -19,7 +19,7 @@ Route::middleware('auth:sanctum')->group(function(){
 });
 Route::middleware('auth:sanctum')->group(function( ){
     Route::get('/harvest',[HarvestController::class,'index']);
-    Route::post('/harvest',[HarvestController::class,'create']);
+    Route::post('/harvest',[HarvestController::class,'store']);
     Route::get('/harvest/{id}',[HarvestController::class,'show']);
     Route::put('/harvest/{id}',[HarvestController::class,'update']);
     Route::delete('/harvest/{id}',[HarvestController::class,'destroy']);
