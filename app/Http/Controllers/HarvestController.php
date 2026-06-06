@@ -37,11 +37,11 @@ class HarvestController
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdateHarvestRequest $request,string $id, HarvestService $harvestService)
+    public function update(UpdateHarvestRequest $data,string $id, HarvestService $harvestService)
     {
                 $harvest = Harvest::findOrFail($id);
 
-        return $harvestService->updateHarvest($request, $harvest);
+        return $harvestService->updateHarvest( $data , $harvest);
     }
     public function updateHarvestStatus(string $id, string $status, HarvestService $harvestService)
     {
