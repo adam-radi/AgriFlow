@@ -6,7 +6,9 @@ use App\Http\Requests\StoreHarvestRequest;
 use App\Http\Requests\UpdateHarvestRequest;
 use App\Services\HarvestService;
 use App\Models\Harvest;
-class HarvestController
+use App\Http\Controllers\Controller;
+
+class HarvestController extends Controller
 {
     /**
      * Display a listing of the resource.

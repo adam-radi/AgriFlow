@@ -11,11 +11,21 @@ class User extends Authenticatable
 {
     use HasFactory, HasApiTokens;
 
-    protected $fillable = ['name', 'email', 'password', 'role'];
+    protected $fillable = ['name', 'email', 'password', 'role', 'farmer_status', 'phone', 'zone'];
 
     public function products()
     {
         return $this->hasMany(Product::class);
+    }
+
+    public function orders()
+    {
+        return $this->hasMany(Order::class, 'customer_id');
+    }
+
+    public function deliveryGroups()
+    {
+        return $this->hasMany(DeliveryGroup::class, 'delivery_user_id');
     }
     public function isAdmin()
     {
