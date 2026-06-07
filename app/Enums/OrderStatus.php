@@ -2,10 +2,11 @@
 
 namespace App\Enums;
 
-enum OrderStatus
+class OrderStatus
 {
-    const Pending = 'pending';
-    const Processing = 'Processing';
-    const Completed = 'Completed';
-    const Canceled = 'canceled';
+    const Pending   = 'pending';
+    const Confirmed = 'confirmed';
+    const Cancelled = 'cancelled';
+    const Delivered = 'delivered';
 }
+
