@@ -9,4 +9,3 @@ class OrderStatus
     const Cancelled = 'cancelled';
     const Delivered = 'delivered';
 }
-

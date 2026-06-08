@@ -34,13 +34,7 @@ class HarvestPolicy
      */
     public function create(User $user): bool
     {
-       if ($harvest->product->user_id === auth()->id()) {
-            return true;
-        } else {
-            return false;
-            }
-        }
-        
+        return $user->isFarmer();
     }
 
     /**

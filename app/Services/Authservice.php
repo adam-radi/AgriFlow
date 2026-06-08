@@ -4,18 +4,17 @@ namespace App\Services;
 
 use App\Models\User;
 use App\Enums\UserRole;
-use Illuminate\Container\Attributes\CurrentUser;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\ValidationException;
 
-class Authservice
+class AuthService
 {
-    public function register(Request $request)
+    public function register(Request $request): array
     {
         if (!$request->role || $request->role === UserRole::Admin) {
-            $request->role  = UserRole::Client;
-        };
-
+            $request->role = UserRole::Client;
+        }
 
         $user = User::create([
             'name' => $request->name,
@@ -23,30 +22,29 @@ class Authservice
             'password' => bcrypt($request->password),
             'role' => $request->role,
         ]);
-        $token = $user->createToken('auth_token')->plaintextToken;
-        return response()->json([
-            'user' => $user,
-            'token' => $token,
-        ]);
-    }
-    public function Login(Request $request)
-    {
 
-        $user = User::where('email', $request->email)->first();
-        if (!$user || !Hash::check($request->password, $user->password)) {
-            return response()->json(['message', 'Invalid credentials'], 401);
-        };
-        $token = $user->createToken('auth_token')->plaintextToken;
-        return response()->json([
-            'user' => $user,
-            'token' => $token,
-        ]);
+        $token = $user->createToken('auth_token')->plainTextToken;
+
+        return ['user' => $user, 'token' => $token];
     }
-    public function logout(Request $request)
+
+    public function login(Request $request): array
+    {
+        $user = User::where('email', $request->email)->first();
+
+        if (!$user || !Hash::check($request->password, $user->password)) {
+            throw ValidationException::withMessages([
+                'email' => ['Invalid credentials'],
+            ]);
+        }
+
+        $token = $user->createToken('auth_token')->plainTextToken;
+
+        return ['user' => $user, 'token' => $token];
+    }
+
+    public function logout(Request $request): void
     {
         $request->user()->currentAccessToken()->delete();
-        return response()->json([
-            'massage' => 'logged out succesfull'
-        ]);
     }
 }

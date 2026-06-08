@@ -2,7 +2,7 @@
 
 namespace App\Enums;
 
-enum HarvestStatus
+class HarvestStatus
 {
     const Open = 'open';
     const Close = 'close';
