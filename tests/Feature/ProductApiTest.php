@@ -14,7 +14,7 @@ class ProductApiTest extends TestCase
     public function test_farmer_can_create_product()
     {
         $farmer = User::factory()->create([
-            'role' => 'farmer'
+            'role' => 'Farmer'
         ]);
 
         Sanctum::actingAs($farmer);
@@ -40,7 +40,7 @@ class ProductApiTest extends TestCase
     public function test_farmer_can_update_his_product()
     {
         $farmer = User::factory()->create([
-            'role' => 'farmer'
+            'role' => 'Farmer'
         ]);
 
         Sanctum::actingAs($farmer);
@@ -63,7 +63,7 @@ class ProductApiTest extends TestCase
     public function test_farmer_can_delete_his_product()
     {
         $farmer = User::factory()->create([
-            'role' => 'farmer'
+            'role' => 'Farmer'
         ]);
 
         Sanctum::actingAs($farmer);
@@ -97,11 +97,11 @@ class ProductApiTest extends TestCase
     public function test_farmer_cannot_update_other_farmer_product()
     {
         $owner = User::factory()->create([
-            'role' => 'farmer'
+            'role' => 'Farmer'
         ]);
 
         $attacker = User::factory()->create([
-            'role' => 'farmer'
+            'role' => 'Farmer'
         ]);
 
         $product = Product::factory()->create([
@@ -118,13 +118,13 @@ class ProductApiTest extends TestCase
     }
     public function test_product_creation_requires_name()
 {
-    $farmer = User::factory()->create([
-        'role' => 'farmer'
-    ]);
+        $farmer = User::factory()->create([
+            'role' => 'Farmer'
+        ]);
 
-    Sanctum::actingAs($farmer);
+        Sanctum::actingAs($farmer);
 
-    $response = $this->postJson('/api/products', []);
+        $response = $this->postJson('/api/products', []);
 
     $response->assertStatus(422);
 

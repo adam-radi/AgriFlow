@@ -205,7 +205,7 @@ class OrderCapacityTest extends TestCase
         ]);
         $response->assertStatus(201);
 
-        $orderId = $response->json('order.id');
+        $orderId = $response->json('data.id');
 
         $cancel = $this->postJson("/api/orders/{$orderId}/cancel");
         $cancel->assertStatus(200);
@@ -231,7 +231,7 @@ class OrderCapacityTest extends TestCase
         ]);
         $response->assertStatus(201);
 
-        $orderId = $response->json('order.id');
+        $orderId = $response->json('data.id');
 
         $this->postJson("/api/orders/{$orderId}/cancel")->assertStatus(200);
 

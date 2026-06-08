@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\DeliveryGroupResource;
 use App\Models\DeliveryGroup;
 use App\Services\DeliveryService;
 use Illuminate\Http\Request;
@@ -11,49 +12,41 @@ class DeliveryController extends Controller
 {
     public function index(Request $request, DeliveryService $deliveryService)
     {
+        $this->authorize('viewAny', DeliveryGroup::class);
+
         if ($request->user()->isAdmin()) {
-            return response()->json($deliveryService->listGroups($request));
+            $groups = $deliveryService->listGroups($request);
+        } else {
+            $groups = $deliveryService->listLivreurGroups($request);
         }
 
-        if ($request->user()->isLivreur()) {
-            return response()->json($deliveryService->listLivreurGroups($request));
-        }
-
-        abort(403, 'Unauthorized');
+        return $this->success($groups);
     }
 
     public function show(DeliveryGroup $deliveryGroup, DeliveryService $deliveryService)
     {
-        return response()->json($deliveryService->showGroup($deliveryGroup));
+        $this->authorize('view', $deliveryGroup);
+
+        $group = $deliveryService->showGroup($deliveryGroup);
+
+        return $this->success(new DeliveryGroupResource($group));
     }
 
     public function assign(DeliveryGroup $deliveryGroup, int $userId, Request $request, DeliveryService $deliveryService)
     {
-        if (!$request->user()->isAdmin()) {
-            abort(403, 'Unauthorized');
-        }
+        $this->authorize('assign', DeliveryGroup::class);
 
         $group = $deliveryService->assignDeliveryUser($deliveryGroup, $userId);
 
-        return response()->json([
-            'message'        => 'Delivery user assigned',
-            'delivery_group' => $group,
-        ]);
+        return $this->success(new DeliveryGroupResource($group), 'Delivery user assigned');
     }
 
     public function updateStatus(DeliveryGroup $deliveryGroup, string $status, Request $request, DeliveryService $deliveryService)
     {
-        $user = $request->user();
-
-        if (!$user->isAdmin() && !($user->isLivreur() && $deliveryGroup->delivery_user_id === $user->id)) {
-            abort(403, 'Unauthorized');
-        }
+        $this->authorize('updateStatus', $deliveryGroup);
 
         $group = $deliveryService->updateGroupStatus($deliveryGroup, $status);
 
-        return response()->json([
-            'message'        => 'Status updated',
-            'delivery_group' => $group,
-        ]);
+        return $this->success(new DeliveryGroupResource($group), 'Status updated');
     }
 }

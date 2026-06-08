@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\PaymentResource;
 use App\Models\Order;
 use App\Models\Payment;
 use App\Services\PaymentService;
@@ -14,43 +15,32 @@ class PaymentController extends Controller
     {
         $payment = $paymentService->initiatePayment($order, $request);
 
-        return response()->json([
-            'message' => 'Payment initiated',
-            'payment' => $payment,
-        ], 201);
+        return $this->created(new PaymentResource($payment), 'Payment initiated');
     }
 
     public function confirm(Payment $payment, Request $request, PaymentService $paymentService)
     {
-        if (!$request->user()->isAdmin()) {
-            abort(403, 'Unauthorized');
-        }
+        $this->authorize('confirm', Payment::class);
 
         $transactionId = $request->input('transaction_id', uniqid('txn_'));
         $payment = $paymentService->confirmPayment($payment, $transactionId);
 
-        return response()->json([
-            'message' => 'Payment confirmed',
-            'payment' => $payment,
-        ]);
+        return $this->success(new PaymentResource($payment), 'Payment confirmed');
     }
 
     public function refund(Payment $payment, Request $request, PaymentService $paymentService)
     {
-        if (!$request->user()->isAdmin()) {
-            abort(403, 'Unauthorized');
-        }
+        $this->authorize('refund', Payment::class);
 
         $payment = $paymentService->refundPayment($payment);
 
-        return response()->json([
-            'message' => 'Payment refunded',
-            'payment' => $payment,
-        ]);
+        return $this->success(new PaymentResource($payment), 'Payment refunded');
     }
 
     public function myPayments(Request $request, PaymentService $paymentService)
     {
-        return response()->json($paymentService->listCustomerPayments($request));
+        $payments = $paymentService->listCustomerPayments($request);
+
+        return $this->success($payments);
     }
 }

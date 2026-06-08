@@ -3,6 +3,9 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\OrderResource;
+use App\Http\Resources\PaymentResource;
+use App\Http\Resources\ProductResource;
 use App\Models\Order;
 use App\Models\Payment;
 use App\Models\Product;
@@ -19,7 +22,9 @@ class CustomerDashboardController extends Controller
         ->latest()
         ->paginate(15);
 
-        return response()->json($products);
+        return $this->success(
+            ProductResource::collection($products)->response()->getData(true)
+        );
     }
 
     public function orderHistory(Request $request)
@@ -29,7 +34,9 @@ class CustomerDashboardController extends Controller
             ->latest()
             ->paginate(15);
 
-        return response()->json($orders);
+        return $this->success(
+            OrderResource::collection($orders)->response()->getData(true)
+        );
     }
 
     public function trackOrder(Order $order, Request $request)
@@ -38,12 +45,14 @@ class CustomerDashboardController extends Controller
             abort(403, 'Unauthorized');
         }
 
-        return response()->json($order->load(
+        $order->load(
             'items.product',
             'items.quantityStandard',
             'items.deliveryGroupItem.deliveryGroup',
             'payment'
-        ));
+        );
+
+        return $this->success(new OrderResource($order));
     }
 
     public function paymentHistory(Request $request)
@@ -53,6 +62,8 @@ class CustomerDashboardController extends Controller
             ->latest()
             ->paginate(15);
 
-        return response()->json($payments);
+        return $this->success(
+            PaymentResource::collection($payments)->response()->getData(true)
+        );
     }
 }

@@ -4,59 +4,65 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Requests\StoreHarvestRequest;
 use App\Http\Requests\UpdateHarvestRequest;
+use App\Http\Resources\HarvestResource;
 use App\Services\HarvestService;
 use App\Models\Harvest;
 use App\Http\Controllers\Controller;
 
 class HarvestController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index(){
-        $harvest=Harvest::paginate(30);
-        return($harvest);
-    }
-    
-      public function show(string $id){
-        $product=Harvest::FindOrFail($id);
-        return $product;
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(StoreHarvestRequest $request ,HarvestService $harvestService)
+    public function index()
     {
-        return $harvestService->createHarvest($request);
+        $harvests = Harvest::with('product')->latest()->paginate(30);
+
+        return $this->success(
+            HarvestResource::collection($harvests)->response()->getData(true)
+        );
     }
 
-    /**
-     * Display the specified resource.
-     */
-    
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(UpdateHarvestRequest $data,string $id, HarvestService $harvestService)
+    public function show(string $id)
     {
-                $harvest = Harvest::findOrFail($id);
+        $harvest = Harvest::with('product')->findOrFail($id);
 
-        return $harvestService->updateHarvest( $data , $harvest);
+        return $this->success(new HarvestResource($harvest));
     }
+
+    public function store(StoreHarvestRequest $request, HarvestService $harvestService)
+    {
+        $this->authorize('create', Harvest::class);
+
+        $harvest = $harvestService->createHarvest($request);
+
+        return $this->created(new HarvestResource($harvest), 'Harvest created successfully');
+    }
+
+    public function update(UpdateHarvestRequest $request, string $id, HarvestService $harvestService)
+    {
+        $harvest = Harvest::findOrFail($id);
+        $this->authorize('update', $harvest);
+
+        $harvest = $harvestService->updateHarvest($harvest, $request->validated());
+
+        return $this->success(new HarvestResource($harvest), 'Harvest updated successfully');
+    }
+
     public function updateHarvestStatus(string $id, string $status, HarvestService $harvestService)
     {
         $harvest = Harvest::findOrFail($id);
-        return $harvestService->updateHarvestStatus($harvest, $status);
+        $this->authorize('update', $harvest);
+
+        $harvest = $harvestService->updateHarvestStatus($harvest);
+
+        return $this->success(new HarvestResource($harvest), 'Harvest status updated');
     }
-    /**
-     * Remove the specified resource from storage.
-     */
+
     public function destroy(string $id)
     {
-        $harvest=Harvest::where('id',$id);
-        
-        return $harvest->delete();
+        $harvest = Harvest::findOrFail($id);
+        $this->authorize('delete', $harvest);
+
+        $harvest->delete();
+
+        return $this->success(null, 'Harvest deleted successfully');
     }
 }

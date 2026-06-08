@@ -2,10 +2,11 @@
 
 namespace App\Http\Controllers\API\Auth;
 
-use Illuminate\Routing\Controller;
+use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\RegisterRequest;
-use App\Services\AuthService;
 use App\Http\Requests\Auth\LoginRequest;
+use App\Http\Resources\UserResource;
+use App\Services\AuthService;
 use Illuminate\Http\Request;
 
 class AuthController extends Controller
@@ -14,32 +15,31 @@ class AuthController extends Controller
     {
         $result = $authService->register($request);
 
-        return response()->json($result, 201);
+        return $this->created([
+            'user'  => new UserResource($result['user']),
+            'token' => $result['token'],
+        ], 'Registration successful');
     }
 
     public function login(LoginRequest $request, AuthService $authService)
     {
         $result = $authService->login($request);
 
-        return response()->json($result);
+        return $this->success([
+            'user'  => new UserResource($result['user']),
+            'token' => $result['token'],
+        ], 'Login successful');
     }
 
     public function me(Request $request)
     {
-        return response()->json([
-            'user' => $request->user(),
-        ]);
+        return $this->success(new UserResource($request->user()));
     }
 
     public function logout(Request $request, AuthService $authService)
     {
         $authService->logout($request);
 
-        return response()->json([
-            'message' => 'Logged out successfully',
-        ]);
+        return $this->success(null, 'Logged out successfully');
     }
 }
-
-
-?>

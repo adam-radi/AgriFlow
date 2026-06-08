@@ -4,6 +4,11 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CreateDeliveryUserRequest;
+use App\Http\Resources\HarvestResource;
+use App\Http\Resources\OrderResource;
+use App\Http\Resources\ProductResource;
+use App\Http\Resources\DeliveryGroupResource;
+use App\Http\Resources\UserResource;
 use App\Models\User;
 use App\Services\AdminService;
 use Illuminate\Http\Request;
@@ -21,79 +26,77 @@ class AdminController extends Controller
     {
         $this->ensureAdmin($request);
 
-        return response()->json($service->globalStats());
+        return $this->success($service->globalStats());
     }
 
     public function listUsers(Request $request, AdminService $service)
     {
         $this->ensureAdmin($request);
 
-        return response()->json($service->listUsers($request));
+        return $this->success($service->listUsers($request));
     }
 
     public function approveFarmer(User $user, Request $request, AdminService $service)
     {
         $this->ensureAdmin($request);
 
-        return response()->json([
-            'message' => 'Farmer approved',
-            'user'    => $service->approveFarmer($user),
-        ]);
+        $user = $service->approveFarmer($user);
+
+        return $this->success(new UserResource($user), 'Farmer approved');
     }
 
     public function rejectFarmer(User $user, Request $request, AdminService $service)
     {
         $this->ensureAdmin($request);
 
-        return response()->json([
-            'message' => 'Farmer rejected',
-            'user'    => $service->rejectFarmer($user),
-        ]);
+        $user = $service->rejectFarmer($user);
+
+        return $this->success(new UserResource($user), 'Farmer rejected');
     }
 
     public function createDeliveryUser(CreateDeliveryUserRequest $request, AdminService $service)
     {
         $this->ensureAdmin($request);
 
-        return response()->json([
-            'message' => 'Delivery user created',
-            'user'    => $service->createDeliveryUser($request),
-        ], 201);
+        $user = $service->createDeliveryUser($request);
+
+        return $this->created(new UserResource($user), 'Delivery user created');
     }
 
     public function deleteUser(User $user, Request $request, AdminService $service)
     {
         $this->ensureAdmin($request);
+
         $service->deleteUser($user);
 
-        return response()->json(['message' => 'User deleted']);
+        return $this->success(null, 'User deleted');
     }
 
     public function listOrders(Request $request, AdminService $service)
     {
         $this->ensureAdmin($request);
 
-        return response()->json($service->listAllOrders($request));
+        return $this->success($service->listAllOrders($request));
     }
 
     public function listProducts(Request $request, AdminService $service)
     {
         $this->ensureAdmin($request);
 
-        return response()->json($service->listAllProducts($request));
+        return $this->success($service->listAllProducts($request));
     }
 
     public function listHarvests(Request $request, AdminService $service)
     {
         $this->ensureAdmin($request);
 
-        return response()->json($service->listAllHarvests($request));
+        return $this->success($service->listAllHarvests($request));
     }
 
     public function listDeliveries(Request $request, AdminService $service)
     {
         $this->ensureAdmin($request);
 
-        return response()->json($service->listAllDeliveries($request));
+        return $this->success($service->listAllDeliveries($request));
     }
 }
