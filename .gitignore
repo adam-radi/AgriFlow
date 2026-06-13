@@ -1,0 +1,8 @@
+# backend ignored for frontend branch
+agriflow-api/
+
+# node modules only inside frontend
+node_modules/
+
+# root junk
+.env

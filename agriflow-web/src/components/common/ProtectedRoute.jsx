@@ -4,6 +4,7 @@ import { selectIsAuthenticated } from "../../features/auth/authSelectors";
 
 function ProtectedRoute({ children }) {
     const isAuthenticated = useSelector(selectIsAuthenticated);
+    
     if (!isAuthenticated) {
         return <Navigate to="/login" replace />;
     }

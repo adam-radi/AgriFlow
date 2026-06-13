@@ -8,7 +8,6 @@ export const selectToken = (state) => state.auth.token;
 export const selectIsAuthenticated = (state) => state.auth.isAuthenticated;
 
 // Backward-compat typo (used by ProtectedRoute.jsx)
-export const selectISSuthenticated = (state) => state.auth.isAuthenticated;
 
 export const selectAuthError = (state) => state.auth.error;
 
