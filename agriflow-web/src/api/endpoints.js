@@ -5,6 +5,8 @@ const ENDPOINTS = {
         REGISTER: "/register",
         LOGOUT: "/logout",
         PROFILE: "/profile",
+        registerClient: "/register/client",
+        registerFarmer: "/register/farmer",
     },
 
     PRODUCTS: "/products",

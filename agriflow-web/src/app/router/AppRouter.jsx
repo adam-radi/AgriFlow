@@ -1,8 +1,8 @@
-import { BrowserRouter as Router, Routes, Route } from "reatc-router-dom";
-import AppProvider from "./providers/AppProvider";
-import PublicLayout from "../layouts/PublicLayout";
-import ClientLayout from "../layouts/ClientLayout";
-import AdminLayout from "../layouts/AdminLayout";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import {AppProvider} from '../providers/AppProvider';
+import PublicLayout from "../../layouts/PublicLayout";
+import ClientLayout from "../../layouts/ClientLayout";
+import AdminLayout from "../../layouts/AdminLayout";
 
 import ProtectedRoute from "../../components/common/ProtectedRoute";
 import FarmerLayout from "../../layouts/FarmerLayout";
