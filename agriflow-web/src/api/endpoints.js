@@ -24,7 +24,14 @@ const ENDPOINTS = {
     ORDER_CREATE: "/orders",
     FARMER_ORDERS: "/farmer/orders",
     ADMIN_ORDERS: "/admin/orders",
-    DELIVERY: "/deliveries",
+    DELIVERY: {
+        BASE: "/deliveries",
+        CREATE: "/deliveries",
+        GET_ONE: (id) => `/deliveries/${id}`,
+        ASSIGN_ORDERS: (id) => `/deliveries/${id}/assign`,
+        UPDATE_STATUS: (id) => `/deliveries/${id}/status`,
+        ROUTE: (id) => `/deliveries/${id}/route`,
+    },
     PAYMENTS: "/payments",
     ADMIN: "/admin",
 };
