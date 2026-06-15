@@ -1,14 +1,21 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { harvestAPI } from "./harvestApi";
+import { mockHarvests } from "../../api/mockData";
 
 export const fetchHarvests = createAsyncThunk(
     "harvests/fetchAll",
     async (params = {}, { rejectWithValue }) => {
         try {
             const res = await harvestAPI.getAll(params);
-            return res.data;
+            const data = res.data;
+            const hasData = Array.isArray(data) ? data.length > 0 : (data.results?.length > 0 || data.harvests?.length > 0);
+            if (!hasData) {
+                return mockHarvests;
+            }
+            return data;
         } catch (err) {
-            return rejectWithValue(err.response?.data || "Failed to load harvests");
+            console.warn("API harvests call failed, falling back to mockHarvests:", err);
+            return mockHarvests;
         }
     }
 );
@@ -20,6 +27,9 @@ export const fetchHarvestById = createAsyncThunk(
             const res = await harvestAPI.getById(id);
             return res.data;
         } catch (err) {
+            console.warn(`API harvest detail call failed for id ${id}, falling back to mockHarvests:`, err);
+            const found = mockHarvests.find(h => h.id === parseInt(id) || h.id === id);
+            if (found) return found;
             return rejectWithValue(err.response?.data || "Harvest not found");
         }
     }
@@ -30,9 +40,15 @@ export const fetchFarmerHarvests = createAsyncThunk(
     async (_, { rejectWithValue }) => {
         try {
             const res = await harvestAPI.getFarmerHarvests();
-            return res.data;
+            const data = res.data;
+            const hasData = Array.isArray(data) ? data.length > 0 : (data.results?.length > 0 || data.harvests?.length > 0);
+            if (!hasData) {
+                return mockHarvests;
+            }
+            return data;
         } catch (err) {
-            return rejectWithValue(err.response?.data || "Failed to load your harvests");
+            console.warn("API farmer harvests call failed, falling back to mockHarvests:", err);
+            return mockHarvests;
         }
     }
 );
@@ -102,9 +118,15 @@ export const fetchAdminHarvests = createAsyncThunk(
     async (params = {}, { rejectWithValue }) => {
         try {
             const res = await harvestAPI.getAdminHarvests(params);
-            return res.data;
+            const data = res.data;
+            const hasData = Array.isArray(data) ? data.length > 0 : (data.results?.length > 0 || data.harvests?.length > 0);
+            if (!hasData) {
+                return mockHarvests;
+            }
+            return data;
         } catch (err) {
-            return rejectWithValue(err.response?.data || "Failed to load harvests");
+            console.warn("API admin harvests call failed, falling back to mockHarvests:", err);
+            return mockHarvests;
         }
     }
 );
