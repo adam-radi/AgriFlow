@@ -20,6 +20,10 @@ const ENDPOINTS = {
     ADMIN_HARVESTS: "/admin/harvests",
 
     ORDERS: "/orders",
+    ORDER_DETAILS: (id) => `/orders/${id}`,
+    ORDER_CREATE: "/orders",
+    FARMER_ORDERS: "/farmer/orders",
+    ADMIN_ORDERS: "/admin/orders",
     DELIVERY: "/deliveries",
     PAYMENTS: "/payments",
     ADMIN: "/admin",

@@ -19,4 +19,11 @@ export const adminHarvestRoutes = [
     { path: "/admin/harvests", role: "Admin" },
 ];
 
+export const clientOrderRoutes = [
+    { path: "/client/cart", role: "Client" },
+    { path: "/client/checkout", role: "Client" },
+    { path: "/client/orders", role: "Client" },
+    { path: "/client/orders/:id", role: "Client" },
+];
+
 export default authRoutes;

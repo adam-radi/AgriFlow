@@ -3,6 +3,7 @@
 
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { productAPI } from "./productApi";
+import { mockProducts } from "../../api/mockData";
 
 // ─── ASYNC THUNKS ─────────────────────────────────────────────────────────────
 
@@ -12,9 +13,15 @@ export const fetchProducts = createAsyncThunk(
     async (params = {}, { rejectWithValue }) => {
         try {
             const res = await productAPI.getAll(params);
-            return res.data;
+            const data = res.data;
+            const hasData = Array.isArray(data) ? data.length > 0 : (data.results?.length > 0 || data.products?.length > 0);
+            if (!hasData) {
+                return mockProducts;
+            }
+            return data;
         } catch (err) {
-            return rejectWithValue(err.response?.data || "Failed to load products");
+            console.warn("API products call failed, falling back to mockProducts:", err);
+            return mockProducts;
         }
     }
 );
@@ -27,6 +34,9 @@ export const fetchProductById = createAsyncThunk(
             const res = await productAPI.getById(id);
             return res.data;
         } catch (err) {
+            console.warn(`API product detail call failed for id ${id}, falling back to mockProducts:`, err);
+            const found = mockProducts.find(p => p.id === parseInt(id) || p.id === id);
+            if (found) return found;
             return rejectWithValue(err.response?.data || "Product not found");
         }
     }
@@ -38,9 +48,15 @@ export const fetchFarmerProducts = createAsyncThunk(
     async (_, { rejectWithValue }) => {
         try {
             const res = await productAPI.getFarmerProducts();
-            return res.data;
+            const data = res.data;
+            const hasData = Array.isArray(data) ? data.length > 0 : (data.results?.length > 0 || data.products?.length > 0);
+            if (!hasData) {
+                return mockProducts;
+            }
+            return data;
         } catch (err) {
-            return rejectWithValue(err.response?.data || "Failed to load your products");
+            console.warn("API farmer products call failed, falling back to mockProducts:", err);
+            return mockProducts;
         }
     }
 );

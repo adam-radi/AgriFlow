@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchProductById, clearSelectedProduct } from "../../features/products/productSlice";
@@ -7,6 +7,7 @@ import {
     selectProductsLoading,
     selectProductsError,
 } from "../../features/products/productSelectors";
+import { addToCart } from "../../features/orders/orderSlice";
 
 const PLACEHOLDER_IMG = "https://images.unsplash.com/photo-1542838132-92c53300491e?w=800&q=80";
 
@@ -71,6 +72,24 @@ export default function ProductDetailsPage() {
 
     const isAvailable = product.is_available !== false;
     const price = product.price != null ? `${parseFloat(product.price).toFixed(2)} MAD` : "Contact farmer";
+    const stdQty = parseFloat(product.standard_quantity) || 1;
+    const [packQty, setPackQty] = useState(1);
+    const totalWeight = (stdQty * packQty).toFixed(2);
+
+    function handleAddToCart() {
+        dispatch(addToCart({
+            productId: product.id,
+            productName: product.name,
+            standardQuantity: stdQty,
+            packQuantity: packQty,
+            totalWeight: parseFloat(totalWeight),
+            unitPrice: parseFloat(product.price) || 0,
+            subtotal: (parseFloat(product.price) || 0) * parseFloat(totalWeight),
+            harvestId: product.harvest_id || null,
+            harvestDate: product.harvest_date || null,
+            estimatedDeliveryDate: product.estimated_delivery_date || null,
+        }));
+    }
 
     return (
         <>
@@ -163,15 +182,38 @@ export default function ProductDetailsPage() {
                             </a>
                         )}
 
+                        {/* ── Add to Cart Section ── */}
+                        {isAvailable && (
+                            <div className="pd-cart-section">
+                                <div className="pd-cart-row">
+                                    <span className="pd-cart-label">Standard Qty:</span>
+                                    <span className="pd-cart-value">{stdQty} kg</span>
+                                </div>
+                                <div className="pd-cart-row">
+                                    <span className="pd-cart-label">Pack Quantity:</span>
+                                    <div className="pd-qty-control">
+                                        <button className="pd-qty-btn" onClick={() => setPackQty(Math.max(1, packQty - 1))}>−</button>
+                                        <span className="pd-qty-num">{packQty}</span>
+                                        <button className="pd-qty-btn" onClick={() => setPackQty(packQty + 1)}>+</button>
+                                    </div>
+                                </div>
+                                <div className="pd-cart-row">
+                                    <span className="pd-cart-label">Total Weight:</span>
+                                    <span className="pd-cart-value">{totalWeight} kg</span>
+                                </div>
+                                <button className="pd-btn-add-cart" onClick={handleAddToCart} id="product-add-cart">
+                                    🛒 Add to Cart
+                                </button>
+                            </div>
+                        )}
+
                         {/* CTA */}
                         <div className="pd-actions">
-                            <button
-                                className="pd-btn-primary"
-                                disabled={!isAvailable}
-                                id="product-order-btn"
-                            >
-                                {isAvailable ? "🛒 Order Now" : "Out of Stock"}
-                            </button>
+                            {!isAvailable && (
+                                <button className="pd-btn-primary" disabled id="product-order-btn">
+                                    Out of Stock
+                                </button>
+                            )}
                             <Link to="/products" className="pd-btn-secondary" id="product-back-catalog">
                                 Browse More
                             </Link>
@@ -189,9 +231,9 @@ const styles = `
 
 .pd-page {
     min-height: 100vh;
-    background: linear-gradient(160deg, #0a1628 0%, #0d2b1a 50%, #0a1628 100%);
+    background-color: #f5f8f6;
     font-family: 'Inter', sans-serif;
-    color: #e2e8f0;
+    color: #334155;
     padding: 2rem 1.5rem 4rem;
 }
 
@@ -204,33 +246,33 @@ const styles = `
     gap: 1rem;
 }
 .pd-back-btn {
-    background: rgba(255,255,255,.07);
-    border: 1.5px solid rgba(255,255,255,.12);
-    color: #94a3b8;
+    background: #ffffff;
+    border: 1.5px solid #cbd5e1;
+    color: #0f2942;
     padding: .5rem 1rem;
     border-radius: 10px;
     cursor: pointer;
     font-family: inherit;
     font-size: .88rem;
-    font-weight: 600;
-    transition: all .18s;
+    font-weight: 700;
+    transition: all .15s;
 }
-.pd-back-btn:hover { border-color: #4ade80; color: #4ade80; background: rgba(74,222,128,.07); }
+.pd-back-btn:hover { border-color: #16a34a; color: #16a34a; background: #f0fdf4; }
 .pd-breadcrumb { font-size: .83rem; color: #475569; }
-.pd-breadcrumb a { color: #4ade80; text-decoration: none; }
+.pd-breadcrumb a { color: #16a34a; text-decoration: none; font-weight: 600; }
 .pd-breadcrumb a:hover { text-decoration: underline; }
 
 /* ── Main card ── */
 .pd-card {
     max-width: 1100px;
     margin: 0 auto;
-    background: rgba(255,255,255,.04);
-    border: 1px solid rgba(255,255,255,.09);
+    background: #ffffff;
+    border: 1px solid #e2ede6;
     border-radius: 24px;
     display: grid;
     grid-template-columns: 1fr 1fr;
     overflow: hidden;
-    box-shadow: 0 32px 80px rgba(0,0,0,.5);
+    box-shadow: 0 10px 30px rgba(15, 41, 66, 0.08);
 }
 @media(max-width:768px) {
     .pd-card { grid-template-columns: 1fr; }
@@ -256,14 +298,14 @@ const styles = `
     letter-spacing: .04em;
 }
 .pd-status-badge.available {
-    background: rgba(34,197,94,.18);
-    border: 1px solid rgba(34,197,94,.4);
-    color: #4ade80;
+    background: #d1fae5;
+    border: 1px solid #10b981;
+    color: #065f46;
 }
 .pd-status-badge.out {
-    background: rgba(239,68,68,.18);
-    border: 1px solid rgba(239,68,68,.4);
-    color: #f87171;
+    background: #fee2e2;
+    border: 1px solid #ef4444;
+    color: #991b1b;
 }
 
 /* ── Info column ── */
@@ -276,9 +318,9 @@ const styles = `
 
 .pd-category-pill {
     display: inline-block;
-    background: rgba(74,222,128,.12);
-    border: 1px solid rgba(74,222,128,.25);
-    color: #4ade80;
+    background: #e6f7ed;
+    border: 1px solid rgba(22, 163, 74, 0.25);
+    color: #15803d;
     font-size: .72rem;
     font-weight: 700;
     letter-spacing: .08em;
@@ -290,22 +332,22 @@ const styles = `
 
 .pd-title {
     font-size: clamp(1.5rem, 3vw, 2rem);
-    font-weight: 800;
-    color: #f1f5f9;
+    font-weight: 850;
+    color: #0f2942;
     margin: 0;
     line-height: 1.2;
 }
 
 .pd-price {
     font-size: 1.7rem;
-    font-weight: 800;
-    color: #4ade80;
+    font-weight: 850;
+    color: #16a34a;
     margin: 0;
 }
 
 .pd-description {
     font-size: .93rem;
-    color: #94a3b8;
+    color: #475569;
     line-height: 1.7;
     margin: 0;
 }
@@ -316,9 +358,9 @@ const styles = `
     flex-direction: column;
     gap: .8rem;
     padding: 1.2rem;
-    background: rgba(255,255,255,.03);
+    background: #f8faf9;
     border-radius: 14px;
-    border: 1px solid rgba(255,255,255,.07);
+    border: 1px solid #e2ede6;
 }
 .pd-detail-row {
     display: flex;
@@ -326,20 +368,20 @@ const styles = `
     gap: .85rem;
 }
 .pd-detail-icon { font-size: 1.1rem; margin-top: .1rem; flex-shrink: 0; }
-.pd-detail-label { font-size: .75rem; color: #475569; margin: 0; text-transform: uppercase; letter-spacing: .06em; font-weight: 600; }
-.pd-detail-value { font-size: .9rem; color: #e2e8f0; margin: .1rem 0 0; font-weight: 500; }
+.pd-detail-label { font-size: .75rem; color: #64748b; margin: 0; text-transform: uppercase; letter-spacing: .06em; font-weight: 700; }
+.pd-detail-value { font-size: .9rem; color: #0f2942; margin: .1rem 0 0; font-weight: 600; }
 
 /* ── Harvest section ── */
 .pd-harvest-section {
     padding: 1.2rem;
-    background: rgba(74,222,128,.06);
-    border: 1px solid rgba(74,222,128,.18);
+    background: #e6f7ed;
+    border: 1px solid rgba(22, 163, 74, 0.2);
     border-radius: 14px;
 }
 .pd-harvest-section-title {
     font-size: .88rem;
     font-weight: 700;
-    color: #4ade80;
+    color: #15803d;
     margin: 0 0 .8rem;
 }
 .pd-harvest-grid {
@@ -357,12 +399,12 @@ const styles = `
     color: #475569;
     text-transform: uppercase;
     letter-spacing: .06em;
-    font-weight: 600;
+    font-weight: 700;
 }
 .pd-harvest-value {
     font-size: .88rem;
-    color: #e2e8f0;
-    font-weight: 600;
+    color: #0f2942;
+    font-weight: 700;
 }
 
 /* ── Harvest link ── */
@@ -370,20 +412,88 @@ const styles = `
     display: inline-flex;
     align-items: center;
     gap: .4rem;
-    color: #4ade80;
+    color: #15803d;
     font-size: .88rem;
-    font-weight: 600;
+    font-weight: 700;
     text-decoration: none;
     padding: .6rem 1rem;
     border-radius: 10px;
-    background: rgba(74,222,128,.08);
-    border: 1px solid rgba(74,222,128,.2);
-    transition: all .18s;
+    background: #e6f7ed;
+    border: 1px solid rgba(22, 163, 74, 0.3);
+    transition: all .15s;
     align-self: flex-start;
 }
 .pd-harvest-link:hover {
-    background: rgba(74,222,128,.16);
-    border-color: rgba(74,222,128,.45);
+    background: #d1fae5;
+    border-color: #10b981;
+}
+
+/* ── Add to Cart ── */
+.pd-cart-section {
+    padding: 1.2rem;
+    background: #f8faf9;
+    border: 1.5px solid #e2ede6;
+    border-radius: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: .7rem;
+}
+.pd-cart-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.pd-cart-label { font-size: .82rem; color: #475569; font-weight: 600; }
+.pd-cart-value { font-size: .9rem; color: #0f2942; font-weight: 750; }
+.pd-qty-control {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    padding: .2rem;
+}
+.pd-qty-btn {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    border: none;
+    background: #e6f7ed;
+    color: #15803d;
+    font-size: 1.1rem;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background .15s;
+}
+.pd-qty-btn:hover { background: #d1fae5; }
+.pd-qty-num {
+    font-size: 1rem;
+    font-weight: 750;
+    color: #0f2942;
+    min-width: 24px;
+    text-align: center;
+}
+.pd-btn-add-cart {
+    width: 100%;
+    padding: .8rem;
+    border-radius: 12px;
+    border: none;
+    background: #16a34a;
+    color: #ffffff;
+    font-weight: 700;
+    font-size: .95rem;
+    cursor: pointer;
+    transition: transform .15s, background-color .15s, box-shadow .15s;
+    font-family: inherit;
+    box-shadow: 0 4px 12px rgba(22, 163, 74, 0.2);
+}
+.pd-btn-add-cart:hover {
+    background-color: #15803d;
+    transform: translateY(-1.5px);
+    box-shadow: 0 6px 18px rgba(22, 163, 74, 0.3);
 }
 
 /* ── Actions ── */
@@ -395,27 +505,30 @@ const styles = `
     padding: .9rem 1.6rem;
     border-radius: 12px;
     border: none;
-    background: linear-gradient(135deg, #16a34a, #22c55e);
-    color: #fff;
+    background: #16a34a;
+    color: #ffffff;
     font-weight: 700;
     font-size: .95rem;
     cursor: pointer;
-    transition: transform .15s, box-shadow .15s;
+    transition: transform .15s, background-color .15s, box-shadow .15s;
     font-family: inherit;
     text-align: center;
     text-decoration: none;
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    box-shadow: 0 4px 12px rgba(22, 163, 74, 0.2);
 }
 .pd-btn-primary:hover:not(:disabled) {
-    transform: translateY(-2px);
-    box-shadow: 0 10px 28px rgba(34,197,94,.35);
+    background-color: #15803d;
+    transform: translateY(-1.5px);
+    box-shadow: 0 6px 18px rgba(22, 163, 74, 0.3);
 }
 .pd-btn-primary:disabled {
-    background: rgba(255,255,255,.07);
+    background: #e2e8f0;
     cursor: not-allowed;
-    color: #475569;
+    color: #94a3b8;
+    box-shadow: none;
 }
 
 .pd-btn-secondary {
@@ -423,13 +536,13 @@ const styles = `
     min-width: 140px;
     padding: .9rem 1.6rem;
     border-radius: 12px;
-    border: 1.5px solid rgba(255,255,255,.15);
-    background: rgba(255,255,255,.05);
-    color: #cbd5e1;
+    border: 1.5px solid #cbd5e1;
+    background: #ffffff;
+    color: #475569;
     font-weight: 600;
     font-size: .95rem;
     cursor: pointer;
-    transition: all .18s;
+    transition: all .15s;
     font-family: inherit;
     text-align: center;
     text-decoration: none;
@@ -438,9 +551,9 @@ const styles = `
     justify-content: center;
 }
 .pd-btn-secondary:hover {
-    border-color: #4ade80;
-    color: #4ade80;
-    background: rgba(74,222,128,.06);
+    border-color: #0f2942;
+    color: #0f2942;
+    background: #f8fafc;
 }
 
 /* ── Skeleton ── */
@@ -451,12 +564,12 @@ const styles = `
     grid-template-columns: 1fr 1fr;
     border-radius: 24px;
     overflow: hidden;
-    background: rgba(255,255,255,.04);
-    border: 1px solid rgba(255,255,255,.09);
+    background: #ffffff;
+    border: 1px solid #e2ede6;
 }
 @media(max-width:768px){ .pd-skeleton-page{ grid-template-columns:1fr; } }
 .pd-sk {
-    background: linear-gradient(90deg,rgba(255,255,255,.05) 25%,rgba(255,255,255,.1) 50%,rgba(255,255,255,.05) 75%);
+    background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
     background-size: 200% 100%;
     animation: shimmer 1.5s infinite;
 }
@@ -468,4 +581,4 @@ const styles = `
     0% { background-position: 200% 0; }
     100% { background-position: -200% 0; }
 }
-`;
+`;

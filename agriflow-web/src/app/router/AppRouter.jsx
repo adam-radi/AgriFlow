@@ -1,7 +1,9 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import AuthLayout from "../../layouts/AuthLayout";
+import ClientLayout from "../../layouts/ClientLayout";
 import FarmerLayout from "../../layouts/FarmerLayout";
 import PublicLayout from "../../layouts/PublicLayout";
+import AdminLayout from "../../layouts/AdminLayout";
 import ProtectedRoute from "../../components/common/ProtectedRoute";
 
 // Auth pages
@@ -26,6 +28,12 @@ import HarvestDetailsPage from "../../pages/farmer/harvests/HarvestDetailsPage";
 
 // Admin harvest page
 import AdminHarvestsPage from "../../pages/admin/harvests/AdminHarvestsPage";
+
+// Client order pages
+import CartPage from "../../pages/client/cart/CartPage";
+import CheckoutPage from "../../pages/client/checkout/CheckoutPage";
+import OrdersPage from "../../pages/client/orders/OrdersPage";
+import OrderDetailsPage from "../../pages/client/orders/OrderDetailsPage";
 
 // Placeholder dashboard pages (will be replaced later)
 const PlaceholderDashboard = ({ title, emoji }) => (
@@ -146,6 +154,20 @@ function AppRouter() {
                     }
                 >
                     <Route path="/admin/harvests" element={<AdminHarvestsPage />} />
+                </Route>
+
+                {/* ── Client Cart & Orders (Protected) ──────────────── */}
+                <Route
+                    element={
+                        <ProtectedRoute allowedRoles={["Client"]}>
+                            <ClientLayout />
+                        </ProtectedRoute>
+                    }
+                >
+                    <Route path="/client/cart" element={<CartPage />} />
+                    <Route path="/client/checkout" element={<CheckoutPage />} />
+                    <Route path="/client/orders" element={<OrdersPage />} />
+                    <Route path="/client/orders/:id" element={<OrderDetailsPage />} />
                 </Route>
 
                 {/* ── Unauthorized ───────────────────────────────────── */}
