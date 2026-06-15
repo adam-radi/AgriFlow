@@ -1,19 +1,16 @@
 
 const ENDPOINTS = {
     AUTH: {
-        LOGIN: "/login",
-        REGISTER: "/register",
+        LOGIN: "/auth/Login",
+        REGISTER: "/auth/register",
         LOGOUT: "/logout",
-        PROFILE: "/profile",
-        registerClient: "/register/client",
-        registerFarmer: "/register/farmer",
+        ME: "/me",
     },
 
     PRODUCTS: "/products",
-
-    HARVESTS: "/harvests",
-    ORDERS:"/orders",
-    DELIVERY: "/delivery",
+    HARVESTS: "/harvest",
+    ORDERS: "/orders",
+    DELIVERY: "/deliveries",
     PAYMENTS: "/payments",
     ADMIN: "/admin",
 };

@@ -1,69 +1,135 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
-import PublicLayout from "../../layouts/PublicLayout";
-import ClientLayout from "../../layouts/ClientLayout";
-import AdminLayout from "../../layouts/AdminLayout";
 import AuthLayout from "../../layouts/AuthLayout";
-import ProtectedRoute from "../../components/common/ProtectedRoute";
 import FarmerLayout from "../../layouts/FarmerLayout";
-import RoleGuard from "../../components/common/RoleGuard";
+import PublicLayout from "../../layouts/PublicLayout";
+import ProtectedRoute from "../../components/common/ProtectedRoute";
 
+// Auth pages
 import LoginPage from "../../pages/LoginPage";
 import RegisterClientPage from "../../pages/RegisterClient";
 import RegisterFarmerPage from "../../pages/RegisterFarmerPage";
+
+// Public product pages
+import ProductsPage from "../../pages/public/ProductsPage";
+import ProductDetailsPage from "../../pages/public/ProductDetailsPage";
+
+// Farmer product pages
+import FarmerProductsPage from "../../pages/farmer/products/FarmerProductsPage";
+import CreateProductPage from "../../pages/farmer/products/CreateProductPage";
+import EditProductPage from "../../pages/farmer/products/EditProductPage";
+
+// Placeholder dashboard pages (will be replaced later)
+const PlaceholderDashboard = ({ title, emoji }) => (
+    <div style={{
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: "linear-gradient(135deg,#e8f5e9,#f0f7f4)",
+        fontFamily: "Inter, sans-serif"
+    }}>
+        <div style={{ textAlign: "center" }}>
+            <div style={{ fontSize: "4rem", marginBottom: "1rem" }}>{emoji}</div>
+            <h1 style={{ color: "#2d6a4f", fontWeight: 700 }}>{title} Dashboard</h1>
+            <p style={{ color: "#6c757d" }}>Coming soon...</p>
+        </div>
+    </div>
+);
 
 function AppRouter() {
     return (
         <Router>
             <Routes>
 
+                {/* Redirect root → login */}
                 <Route path="/" element={<Navigate to="/login" replace />} />
-                
+
+                {/* ── Public Auth Routes ─────────────────────────────── */}
                 <Route element={<AuthLayout />}>
-                  <Route path="/login" element={<LoginPage />} />
-                  <Route path="/register/client" element={<RegisterClientPage />} />
-                  <Route path="/register/farmer" element={<RegisterFarmerPage />} />
+                    <Route path="/login" element={<LoginPage />} />
+                    <Route path="/register/client" element={<RegisterClientPage />} />
+                    <Route path="/register/farmer" element={<RegisterFarmerPage />} />
                 </Route>
 
-                {/* <Route path="*" element={<Navigate to="/login" replace />} /> */}
-             <Route path="/dashboard" element={
-                    <ProtectedRoute>
-                        <h1>Dashboard</h1>
-                    </ProtectedRoute>
-             }/>
-
-                <Route element={<PublicLayout />} ></Route>
-
-                <Route element={
-                    <ProtectedRoute>
-
-                        <RoleGuard allowedRoles={["client"]} >
-                        <ClientLayout />
-                        </RoleGuard>
-                    </ProtectedRoute>
-                }>
+                {/* ── Public Product Marketplace ─────────────────────── */}
+                <Route element={<PublicLayout />}>
+                    <Route path="/products" element={<ProductsPage />} />
+                    <Route path="/products/:id" element={<ProductDetailsPage />} />
                 </Route>
 
-                <Route element={
-                    <ProtectedRoute>
-                        <RoleGuard allowedRoles={["admin"]} >
-                        <AdminLayout />
-                        </RoleGuard>
-                    </ProtectedRoute>
-                }>
-                </Route>
+                {/* ── Protected Dashboards ───────────────────────────── */}
+                <Route
+                    path="/dashboard/client"
+                    element={
+                        <ProtectedRoute allowedRoles={["Client"]}>
+                            <PlaceholderDashboard title="Client" emoji="🛒" />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/dashboard/farmer"
+                    element={
+                        <ProtectedRoute allowedRoles={["Farmer"]}>
+                            <PlaceholderDashboard title="Farmer" emoji="🌾" />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/dashboard/admin"
+                    element={
+                        <ProtectedRoute allowedRoles={["Admin"]}>
+                            <PlaceholderDashboard title="Admin" emoji="⚙️" />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/dashboard/delivery"
+                    element={
+                        <ProtectedRoute allowedRoles={["Livreur"]}>
+                            <PlaceholderDashboard title="Delivery" emoji="🚚" />
+                        </ProtectedRoute>
+                    }
+                />
 
+                {/* Generic dashboard */}
+                <Route
+                    path="/dashboard"
+                    element={
+                        <ProtectedRoute>
+                            <PlaceholderDashboard title="Dashboard" emoji="📊" />
+                        </ProtectedRoute>
+                    }
+                />
 
-                <Route element={
-                    <ProtectedRoute>
-                        <RoleGuard allowedRoles={["farmer"]} >
+                {/* ── Farmer Product Management (Protected) ─────────── */}
+                <Route
+                    element={
+                        <ProtectedRoute allowedRoles={["Farmer"]}>
                             <FarmerLayout />
-                        </RoleGuard>
-                    </ProtectedRoute>
-                }>
-                <Route path="/unauthorized" element={"<Unauthorized />"} />
+                        </ProtectedRoute>
+                    }
+                >
+                    <Route path="/farmer/products" element={<FarmerProductsPage />} />
+                    <Route path="/farmer/products/new" element={<CreateProductPage />} />
+                    <Route path="/farmer/products/:id/edit" element={<EditProductPage />} />
                 </Route>
+
+                {/* ── Unauthorized ───────────────────────────────────── */}
+                <Route path="/unauthorized" element={
+                    <div style={{ textAlign: "center", padding: "4rem", fontFamily: "Inter,sans-serif" }}>
+                        <div style={{ fontSize: "3rem" }}>🚫</div>
+                        <h2 style={{ color: "#c0392b" }}>Access Denied</h2>
+                        <p>You don't have permission to view this page.</p>
+                        <a href="/login" style={{ color: "#2d6a4f", fontWeight: 600 }}>← Back to Login</a>
+                    </div>
+                } />
+
+                {/* Catch-all */}
+                <Route path="*" element={<Navigate to="/login" replace />} />
+
             </Routes>
         </Router>
-    )
+    );
 }
+
 export default AppRouter;
