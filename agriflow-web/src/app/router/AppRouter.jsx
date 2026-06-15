@@ -29,6 +29,11 @@ import HarvestDetailsPage from "../../pages/farmer/harvests/HarvestDetailsPage";
 // Admin harvest page
 import AdminHarvestsPage from "../../pages/admin/harvests/AdminHarvestsPage";
 
+// Delivery pages
+import DeliveryDashboard from "../../pages/delivery/DeliveryDashboard";
+import DeliveryGroupsPage from "../../pages/delivery/DeliveryGroupsPage";
+import DeliveryGroupDetails from "../../pages/delivery/DeliveryGroupDetails";
+
 // Client order pages
 import CartPage from "../../pages/client/cart/CartPage";
 import CheckoutPage from "../../pages/client/checkout/CheckoutPage";
@@ -145,6 +150,19 @@ function AppRouter() {
                     <Route path="/farmer/harvests/:id/edit" element={<EditHarvestPage />} />
                 </Route>
 
+                {/* ── Admin Delivery (Protected) ────────────────────── */}
+                <Route
+                    element={
+                        <ProtectedRoute allowedRoles={["Admin"]}>
+                            <AdminLayout />
+                        </ProtectedRoute>
+                    }
+                >
+                    <Route path="/admin/delivery" element={<DeliveryDashboard />} />
+                    <Route path="/admin/delivery/groups" element={<DeliveryGroupsPage />} />
+                    <Route path="/admin/delivery/groups/:id" element={<DeliveryGroupDetails />} />
+                </Route>
+
                 {/* ── Admin Harvest Monitoring (Protected) ──────────── */}
                 <Route
                     element={
@@ -168,6 +186,19 @@ function AppRouter() {
                     <Route path="/client/checkout" element={<CheckoutPage />} />
                     <Route path="/client/orders" element={<OrdersPage />} />
                     <Route path="/client/orders/:id" element={<OrderDetailsPage />} />
+                </Route>
+
+                {/* ── Livreur Delivery Routes (Protected) ──────────── */}
+                <Route
+                    element={
+                        <ProtectedRoute allowedRoles={["Livreur", "Admin"]}>
+                            <ClientLayout />
+                        </ProtectedRoute>
+                    }
+                >
+                    <Route path="/delivery/dashboard" element={<DeliveryDashboard />} />
+                    <Route path="/delivery/groups" element={<DeliveryGroupsPage />} />
+                    <Route path="/delivery/groups/:id" element={<DeliveryGroupDetails />} />
                 </Route>
 
                 {/* ── Unauthorized ───────────────────────────────────── */}
