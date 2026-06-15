@@ -15,8 +15,19 @@ export const farmerHarvestRoutes = [
     { path: "/farmer/harvests/:id/edit", role: "Farmer" },
 ];
 
-export const adminHarvestRoutes = [
+export const adminRoutes = [
+    { path: "/admin", role: "Admin" },
+    { path: "/admin/users", role: "Admin" },
+    { path: "/admin/farmers", role: "Admin" },
+    { path: "/admin/products", role: "Admin" },
+    { path: "/admin/orders", role: "Admin" },
     { path: "/admin/harvests", role: "Admin" },
+];
+
+export const adminDeliveryRoutes = [
+    { path: "/admin/delivery", role: "Admin" },
+    { path: "/admin/delivery/groups", role: "Admin" },
+    { path: "/admin/delivery/groups/:id", role: "Admin" },
 ];
 
 export const clientOrderRoutes = [

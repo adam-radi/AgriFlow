@@ -32,8 +32,20 @@ const ENDPOINTS = {
         UPDATE_STATUS: (id) => `/deliveries/${id}/status`,
         ROUTE: (id) => `/deliveries/${id}/route`,
     },
+    ADMIN: {
+        BASE: "/admin",
+        USERS: "/admin/users",
+        FARMERS: "/admin/farmers",
+        PRODUCTS: "/admin/products",
+        ORDERS: "/admin/orders",
+        HARVESTS: "/admin/harvests",
+        STATS: "/admin/stats",
+        VALIDATE_FARMER: (id) => `/admin/farmers/${id}/validate`,
+        REJECT_FARMER: (id) => `/admin/farmers/${id}/reject`,
+        SUSPEND_USER: (id) => `/admin/users/${id}/suspend`,
+        DISABLE_PRODUCT: (id) => `/admin/products/${id}/disable`,
+    },
     PAYMENTS: "/payments",
-    ADMIN: "/admin",
 };
 
 export default ENDPOINTS;

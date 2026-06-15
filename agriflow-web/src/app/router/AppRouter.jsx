@@ -26,8 +26,13 @@ import CreateHarvestPage from "../../pages/farmer/harvests/CreateHarvestPage";
 import EditHarvestPage from "../../pages/farmer/harvests/EditHarvestPage";
 import HarvestDetailsPage from "../../pages/farmer/harvests/HarvestDetailsPage";
 
-// Admin harvest page
-import AdminHarvestsPage from "../../pages/admin/harvests/AdminHarvestsPage";
+// Admin pages
+import AdminDashboard from "../../pages/admin/AdminDashboard";
+import AdminUsersPage from "../../pages/admin/AdminUsersPage";
+import AdminFarmersPage from "../../pages/admin/AdminFarmersPage";
+import AdminProductsPage from "../../pages/admin/AdminProductsPage";
+import AdminOrdersPage from "../../pages/admin/AdminOrdersPage";
+import AdminHarvestsPage from "../../pages/admin/AdminHarvestsPage";
 
 // Delivery pages
 import DeliveryDashboard from "../../pages/delivery/DeliveryDashboard";
@@ -97,14 +102,6 @@ function AppRouter() {
                     }
                 />
                 <Route
-                    path="/dashboard/admin"
-                    element={
-                        <ProtectedRoute allowedRoles={["Admin"]}>
-                            <PlaceholderDashboard title="Admin" emoji="⚙️" />
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
                     path="/dashboard/delivery"
                     element={
                         <ProtectedRoute allowedRoles={["Livreur"]}>
@@ -150,7 +147,7 @@ function AppRouter() {
                     <Route path="/farmer/harvests/:id/edit" element={<EditHarvestPage />} />
                 </Route>
 
-                {/* ── Admin Delivery (Protected) ────────────────────── */}
+                {/* ── Admin Dashboard & Management (Protected) ──────── */}
                 <Route
                     element={
                         <ProtectedRoute allowedRoles={["Admin"]}>
@@ -158,20 +155,15 @@ function AppRouter() {
                         </ProtectedRoute>
                     }
                 >
+                    <Route path="/admin" element={<AdminDashboard />} />
+                    <Route path="/admin/users" element={<AdminUsersPage />} />
+                    <Route path="/admin/farmers" element={<AdminFarmersPage />} />
+                    <Route path="/admin/products" element={<AdminProductsPage />} />
+                    <Route path="/admin/orders" element={<AdminOrdersPage />} />
+                    <Route path="/admin/harvests" element={<AdminHarvestsPage />} />
                     <Route path="/admin/delivery" element={<DeliveryDashboard />} />
                     <Route path="/admin/delivery/groups" element={<DeliveryGroupsPage />} />
                     <Route path="/admin/delivery/groups/:id" element={<DeliveryGroupDetails />} />
-                </Route>
-
-                {/* ── Admin Harvest Monitoring (Protected) ──────────── */}
-                <Route
-                    element={
-                        <ProtectedRoute allowedRoles={["Admin"]}>
-                            <AdminLayout />
-                        </ProtectedRoute>
-                    }
-                >
-                    <Route path="/admin/harvests" element={<AdminHarvestsPage />} />
                 </Route>
 
                 {/* ── Client Cart & Orders (Protected) ──────────────── */}

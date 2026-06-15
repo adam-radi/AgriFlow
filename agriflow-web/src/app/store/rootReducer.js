@@ -4,6 +4,7 @@ import productReducer from "../../features/products/productSlice";
 import harvestReducer from "../../features/harvests/harvestSlice";
 import orderReducer from "../../features/orders/orderSlice";
 import deliveryReducer from "../../features/delivery/deliverySlice";
+import adminReducer from "../store/slices/admin/adminSlice";
 
 const rootReducer = combineReducers({
    auth: authReducer,
@@ -11,6 +12,7 @@ const rootReducer = combineReducers({
    harvests: harvestReducer,
    orders: orderReducer,
    delivery: deliveryReducer,
+   admin: adminReducer,
 })
 
 export default rootReducer;
