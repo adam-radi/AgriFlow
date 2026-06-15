@@ -1,6 +1,6 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import axiosClient from "../../api/axiosClient";
-import ENDPOINTS from "../../api/endPoints";
+import ENDPOINTS from "../../api/endpoints";
 
 export const loginUser = createAsyncThunk(
     "auth/loginUser",

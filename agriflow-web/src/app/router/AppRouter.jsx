@@ -18,6 +18,15 @@ import FarmerProductsPage from "../../pages/farmer/products/FarmerProductsPage";
 import CreateProductPage from "../../pages/farmer/products/CreateProductPage";
 import EditProductPage from "../../pages/farmer/products/EditProductPage";
 
+// Farmer harvest pages
+import FarmerHarvestsPage from "../../pages/farmer/harvests/FarmerHarvestsPage";
+import CreateHarvestPage from "../../pages/farmer/harvests/CreateHarvestPage";
+import EditHarvestPage from "../../pages/farmer/harvests/EditHarvestPage";
+import HarvestDetailsPage from "../../pages/farmer/harvests/HarvestDetailsPage";
+
+// Admin harvest page
+import AdminHarvestsPage from "../../pages/admin/harvests/AdminHarvestsPage";
+
 // Placeholder dashboard pages (will be replaced later)
 const PlaceholderDashboard = ({ title, emoji }) => (
     <div style={{
@@ -112,6 +121,31 @@ function AppRouter() {
                     <Route path="/farmer/products" element={<FarmerProductsPage />} />
                     <Route path="/farmer/products/new" element={<CreateProductPage />} />
                     <Route path="/farmer/products/:id/edit" element={<EditProductPage />} />
+                </Route>
+
+                {/* ── Farmer Harvest Management (Protected) ─────────── */}
+                <Route
+                    element={
+                        <ProtectedRoute allowedRoles={["Farmer"]}>
+                            <FarmerLayout />
+                        </ProtectedRoute>
+                    }
+                >
+                    <Route path="/farmer/harvests" element={<FarmerHarvestsPage />} />
+                    <Route path="/farmer/harvests/create" element={<CreateHarvestPage />} />
+                    <Route path="/farmer/harvests/:id" element={<HarvestDetailsPage />} />
+                    <Route path="/farmer/harvests/:id/edit" element={<EditHarvestPage />} />
+                </Route>
+
+                {/* ── Admin Harvest Monitoring (Protected) ──────────── */}
+                <Route
+                    element={
+                        <ProtectedRoute allowedRoles={["Admin"]}>
+                            <AdminLayout />
+                        </ProtectedRoute>
+                    }
+                >
+                    <Route path="/admin/harvests" element={<AdminHarvestsPage />} />
                 </Route>
 
                 {/* ── Unauthorized ───────────────────────────────────── */}
