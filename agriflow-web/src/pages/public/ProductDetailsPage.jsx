@@ -125,6 +125,31 @@ export default function ProductDetailsPage() {
                             <DetailRow icon="📍" label="Location" value={product.location} />
                         </div>
 
+                        {/* ── Upcoming Harvest Section ── */}
+                        <div className="pd-harvest-section">
+                            <h3 className="pd-harvest-section-title">🌿 Upcoming Harvest</h3>
+                            <div className="pd-harvest-grid">
+                                <div className="pd-harvest-item">
+                                    <span className="pd-harvest-label">Next Date</span>
+                                    <span className="pd-harvest-value">{product.next_harvest_date || product.harvest_date || "TBD"}</span>
+                                </div>
+                                <div className="pd-harvest-item">
+                                    <span className="pd-harvest-label">Status</span>
+                                    <span className={`pd-harvest-value${product.is_available === false ? " text-danger" : " text-success"}`}>
+                                        {product.is_available === false ? "Unavailable" : "Available"}
+                                    </span>
+                                </div>
+                                <div className="pd-harvest-item">
+                                    <span className="pd-harvest-label">Est. Stock</span>
+                                    <span className="pd-harvest-value">{(product.estimated_stock ?? product.standard_quantity) || "—"}</span>
+                                </div>
+                                <div className="pd-harvest-item">
+                                    <span className="pd-harvest-label">Remaining</span>
+                                    <span className="pd-harvest-value">{product.remaining_capacity ?? "—"}</span>
+                                </div>
+                            </div>
+                        </div>
+
                         {/* Harvest link */}
                         {product.harvest_link && (
                             <a
@@ -303,6 +328,42 @@ const styles = `
 .pd-detail-icon { font-size: 1.1rem; margin-top: .1rem; flex-shrink: 0; }
 .pd-detail-label { font-size: .75rem; color: #475569; margin: 0; text-transform: uppercase; letter-spacing: .06em; font-weight: 600; }
 .pd-detail-value { font-size: .9rem; color: #e2e8f0; margin: .1rem 0 0; font-weight: 500; }
+
+/* ── Harvest section ── */
+.pd-harvest-section {
+    padding: 1.2rem;
+    background: rgba(74,222,128,.06);
+    border: 1px solid rgba(74,222,128,.18);
+    border-radius: 14px;
+}
+.pd-harvest-section-title {
+    font-size: .88rem;
+    font-weight: 700;
+    color: #4ade80;
+    margin: 0 0 .8rem;
+}
+.pd-harvest-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: .6rem;
+}
+.pd-harvest-item {
+    display: flex;
+    flex-direction: column;
+    gap: .15rem;
+}
+.pd-harvest-label {
+    font-size: .7rem;
+    color: #475569;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    font-weight: 600;
+}
+.pd-harvest-value {
+    font-size: .88rem;
+    color: #e2e8f0;
+    font-weight: 600;
+}
 
 /* ── Harvest link ── */
 .pd-harvest-link {

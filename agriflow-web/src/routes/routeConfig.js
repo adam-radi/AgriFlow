@@ -8,4 +8,15 @@ const authRoutes = [
     { path: "/register/farmer", element: RegisterFarmerPage },
 ];
 
+export const farmerHarvestRoutes = [
+    { path: "/farmer/harvests", role: "Farmer" },
+    { path: "/farmer/harvests/create", role: "Farmer" },
+    { path: "/farmer/harvests/:id", role: "Farmer" },
+    { path: "/farmer/harvests/:id/edit", role: "Farmer" },
+];
+
+export const adminHarvestRoutes = [
+    { path: "/admin/harvests", role: "Admin" },
+];
+
 export default authRoutes;
