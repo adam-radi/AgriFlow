@@ -6,9 +6,9 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class StoreProductRequest extends FormRequest
 {
-    public function Authorize()
+    public function authorize(): bool
     {
-        return $this->user()->role === 'farmer' || $this->user()->role === 'Farmer';
+        return $this->user()->isFarmer();
     }
     public function rules()
     {
@@ -18,6 +18,7 @@ class StoreProductRequest extends FormRequest
             'quantities' => 'required|array',
             'quantities.*.label' => 'required|string|regex:/\S/',
             'quantities.*.price' => 'required|numeric|min:0.01',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
         ];
     }
     public function messages()

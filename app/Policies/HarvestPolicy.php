@@ -21,12 +21,7 @@ class HarvestPolicy
      */
     public function view(User $user, Harvest $harvest): bool
     {
-        if ($harvest->product->user_id === auth()->id()) {
-            return true;
-        } else {
-            return false;
-            }
-        
+        return $harvest->product->user_id === $user->id;
     }
 
     /**
@@ -42,12 +37,7 @@ class HarvestPolicy
      */
     public function update(User $user, Harvest $harvest): bool
     {
-        if ($harvest->product->user_id === auth()->id()) {
-            return true;
-        } else {
-            return false;
-            }
-        
+        return $harvest->product->user_id === $user->id;
     }
 
     /**
@@ -55,12 +45,7 @@ class HarvestPolicy
      */
     public function delete(User $user, Harvest $harvest): bool
     {
-        if ($harvest->product->user_id === auth()->id()) {
-            return true;
-        } else {
-            return false;
-            }
-        
+        return $harvest->product->user_id === $user->id;
     }
 
     /**

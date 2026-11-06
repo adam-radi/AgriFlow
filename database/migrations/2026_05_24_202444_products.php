@@ -16,6 +16,7 @@ return new class extends Migration
             $table->string('name');
             $table->decimal('base_price', 8, 2)->check('base_price > 0');
             $table->text('description');
+            $table->string('image_path')->nullable();
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
             $table->timestamps();
         });

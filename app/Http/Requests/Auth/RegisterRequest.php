@@ -15,9 +15,22 @@ class RegisterRequest extends FormRequest
     return [
         'name'=>'required|string|max:255',
         'email'=>'required|email|unique:users',
-        'password'=>'required|min:6|confirmed',
-        'role'=>'nullable|in:Admin,Client,Farmer,Livreur',
+        'password'=>'required|string|min:8|confirmed',
+          'phone' => [
+                'required',
+                'string',
+                'max:30',
+                'unique:users,phone',
+            ],
+        'roles.*' => [
+                  'required',
+                  'string',
+                  'distinct',
+                  Rule::in([
+                      Role::FARMER,
+                      Role::PROFESSIONAL_BUYER,
+                  ])
+      ]
     ];
   }
 }
-?>

@@ -21,8 +21,8 @@ class HarvestService
             'start_date' => $data->start_date,
             'end_date' => $data->end_date,
             'estimated_total_qte' => $data->estimated_total_qte,
-            'max_daily_qte' => $data->max_daily_qte,
-            'status' => $data->status,
+            'max_daily_qte' => $data->max_daily_qte ?? 0,
+            'status' => $data->status ?? HarvestStatus::Open,
         ]);
     }
     public function updateHarvest(Harvest $harvest, array $data): Harvest

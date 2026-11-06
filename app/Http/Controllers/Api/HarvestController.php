@@ -20,6 +20,16 @@ class HarvestController extends Controller
         );
     }
 
+    public function farmerHarvests()
+    {
+        $harvests = Harvest::with('product')
+            ->whereHas('product', fn ($q) => $q->where('user_id', auth()->id()))
+            ->latest()
+            ->get();
+
+        return $this->success(HarvestResource::collection($harvests));
+    }
+
     public function show(string $id)
     {
         $harvest = Harvest::with('product')->findOrFail($id);

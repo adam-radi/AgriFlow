@@ -12,6 +12,11 @@ use Illuminate\Support\Facades\DB;
 
 class DeliveryService
 {
+    public function createGroup(array $data): DeliveryGroup
+    {
+        return DeliveryGroup::create($data);
+    }
+
     public function groupOrderItems(Order $order): void
     {
         DB::transaction(function () use ($order) {

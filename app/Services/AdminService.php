@@ -74,14 +74,15 @@ class AdminService
     public function globalStats(): array
     {
         return [
-            'total_users'    => User::count(),
-            'total_farmers'  => User::where('role', UserRole::Farmer)->count(),
-            'total_customers'=> User::where('role', UserRole::Client)->count(),
-            'total_orders'   => Order::count(),
-            'total_revenue'  => Payment::where('status', 'paid')->sum('amount'),
-            'delivered_orders'=> Order::where('status', 'delivered')->count(),
-            'active_harvests'=> Harvest::where('status', 'open')->count(),
-            'pending_farmers'=> User::where('role', UserRole::Farmer)
+            'total_users'      => User::count(),
+            'total_products'   => Product::count(),
+            'total_farmers'    => User::where('role', UserRole::Farmer)->count(),
+            'total_customers'  => User::where('role', UserRole::Client)->count(),
+            'total_orders'     => Order::count(),
+            'total_revenue'    => Payment::where('status', 'paid')->sum('amount'),
+            'delivered_orders' => Order::where('status', 'delivered')->count(),
+            'active_harvests'  => Harvest::where('status', 'open')->count(),
+            'pending_farmers'  => User::where('role', UserRole::Farmer)
                                     ->where('farmer_status', FarmerStatus::Pending)
                                     ->count(),
         ];
@@ -105,7 +106,7 @@ class AdminService
 
     public function listAllHarvests(Request $request)
     {
-        return Harvest::with('product.user')->latest()->paginate(20);
+        return Harvest::with('product.user', 'product.productQuantities')->latest()->paginate(20);
     }
 
     public function listAllDeliveries(Request $request)

@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\User;
 use App\Enums\UserRole;
+use App\Enums\FarmerStatus;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
@@ -16,12 +17,18 @@ class AuthService
             $request->role = UserRole::Client;
         }
 
-        $user = User::create([
+        $data = [
             'name' => $request->name,
             'email' => $request->email,
             'password' => bcrypt($request->password),
             'role' => $request->role,
-        ]);
+        ];
+
+        if ($request->role === UserRole::Farmer) {
+            $data['farmer_status'] = FarmerStatus::Pending;
+        }
+
+        $user = User::create($data);
 
         $token = $user->createToken('auth_token')->plainTextToken;
 

@@ -194,6 +194,18 @@ class OrderService
 
     public function updateStatus(Order $order, string $status): Order
     {
+        $allowed = [
+            OrderStatus::Pending   => [OrderStatus::Confirmed, OrderStatus::Cancelled],
+            OrderStatus::Confirmed => [OrderStatus::Delivered, OrderStatus::Cancelled],
+        ];
+
+        $current = $order->status;
+        if (!isset($allowed[$current]) || !in_array($status, $allowed[$current], true)) {
+            throw ValidationException::withMessages([
+                'status' => "Cannot transition from '{$current}' to '{$status}'.",
+            ]);
+        }
+
         $order->update(['status' => $status]);
 
         return $order->fresh();

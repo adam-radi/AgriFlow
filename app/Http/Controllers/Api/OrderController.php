@@ -56,9 +56,7 @@ class OrderController extends Controller
 
     public function updateStatus(Order $order, string $status, Request $request, OrderService $orderService)
     {
-        if (!$request->user()->isAdmin()) {
-            abort(403, 'Unauthorized');
-        }
+        $this->authorize('updateStatus', $order);
 
         $updated = $orderService->updateStatus($order, $status);
 

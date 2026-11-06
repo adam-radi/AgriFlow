@@ -22,6 +22,7 @@ class UpdateProductRequest extends FormRequest
             'quantities' => 'sometimes|array',
             'quantities.*.label' => 'required_with:quantities|string|regex:/\S/',
             'quantities.*.price' => 'required_with:quantities|numeric|min:0.01',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
         ];
     }
     public function messages()

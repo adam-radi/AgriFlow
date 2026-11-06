@@ -13,6 +13,10 @@ class PaymentController extends Controller
 {
     public function initiate(Order $order, Request $request, PaymentService $paymentService)
     {
+        if (!$request->user()->isClient()) {
+            abort(403, 'Unauthorized');
+        }
+
         $payment = $paymentService->initiatePayment($order, $request);
 
         return $this->created(new PaymentResource($payment), 'Payment initiated');
@@ -39,6 +43,10 @@ class PaymentController extends Controller
 
     public function myPayments(Request $request, PaymentService $paymentService)
     {
+        if (!$request->user()->isClient()) {
+            abort(403, 'Unauthorized');
+        }
+
         $payments = $paymentService->listCustomerPayments($request);
 
         return $this->success($payments);

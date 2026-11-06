@@ -26,4 +26,9 @@ class OrderPolicy
     {
         return $order->customer_id === $user->id || $user->isAdmin();
     }
+
+    public function updateStatus(User $user, Order $order): bool
+    {
+        return $user->isAdmin();
+    }
 }

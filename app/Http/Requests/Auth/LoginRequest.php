@@ -13,7 +13,7 @@ class LoginRequest extends FormRequest
     public function rules(){
         return[
             'email'=>'required|email',
-            'password'=>'required|min:6',
+            'password'=>'required|string|min:8',
         ];
     }
 }

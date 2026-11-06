@@ -10,6 +10,20 @@ use Illuminate\Http\Request;
 
 class DeliveryController extends Controller
 {
+    public function store(Request $request, DeliveryService $deliveryService)
+    {
+        $this->authorize('create', DeliveryGroup::class);
+
+        $validated = $request->validate([
+            'zone'          => 'required|string|max:255',
+            'delivery_date' => 'required|date',
+        ]);
+
+        $group = $deliveryService->createGroup($validated);
+
+        return $this->success(new DeliveryGroupResource($group), 'Delivery group created');
+    }
+
     public function index(Request $request, DeliveryService $deliveryService)
     {
         $this->authorize('viewAny', DeliveryGroup::class);

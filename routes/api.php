@@ -1,7 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\API\Auth\AuthController;
+use App\Http\Controllers\Api\Auth\AuthController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\Api\HarvestController;
 use App\Http\Controllers\Api\OrderController;
@@ -10,10 +10,17 @@ use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\FarmerDashboardController;
 use App\Http\Controllers\Api\CustomerDashboardController;
 use App\Http\Controllers\Api\AdminController;
+use App\Http\Controllers\Api\CartController;
+
+use App\Http\Controllers\Api\PublicController;
 
 // Auth
-Route::prefix('auth')->post('/register', [AuthController::class, 'register'])->name('register');
-Route::prefix('auth')->post('/Login', [AuthController::class, 'Login'])->name('Login');
+Route::post('auth/register', [AuthController::class, 'register'])->name('register');
+Route::post('auth/Login', [AuthController::class, 'Login'])->name('Login');
+
+// Public — no auth required
+Route::get('/public/products', [PublicController::class, 'products'])->name('public.products');
+Route::get('/public/products/{id}', [PublicController::class, 'productDetails'])->name('public.productDetails');
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me', [AuthController::class, 'me'])->name('me');
@@ -45,6 +52,15 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/orders/{order}/status/{status}', [OrderController::class, 'updateStatus']);
 });
 
+// Cart
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/cart', [CartController::class, 'index']);
+    Route::post('/cart', [CartController::class, 'store']);
+    Route::put('/cart/{item}', [CartController::class, 'update']);
+    Route::delete('/cart/{item}', [CartController::class, 'destroy']);
+    Route::delete('/cart', [CartController::class, 'clear']);
+});
+
 // Payments
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/payments', [PaymentController::class, 'myPayments']);
@@ -56,6 +72,7 @@ Route::middleware('auth:sanctum')->group(function () {
 // Delivery
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/deliveries', [DeliveryController::class, 'index']);
+    Route::post('/deliveries', [DeliveryController::class, 'store']);
     Route::get('/deliveries/{deliveryGroup}', [DeliveryController::class, 'show']);
     Route::post('/deliveries/{deliveryGroup}/assign/{userId}', [DeliveryController::class, 'assign']);
     Route::post('/deliveries/{deliveryGroup}/status/{status}', [DeliveryController::class, 'updateStatus']);
@@ -74,6 +91,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/farmer/stats', [FarmerDashboardController::class, 'stats']);
     Route::get('/farmer/orders', [FarmerDashboardController::class, 'receivedOrders']);
     Route::get('/farmer/analytics/products', [FarmerDashboardController::class, 'popularProducts']);
+    Route::get('/farmers/harvests', [HarvestController::class, 'farmerHarvests']);
 });
 
 // Admin Panel
@@ -88,4 +106,8 @@ Route::middleware('auth:sanctum')->prefix('admin')->group(function () {
     Route::get('/products', [AdminController::class, 'listProducts']);
     Route::get('/harvests', [AdminController::class, 'listHarvests']);
     Route::get('/deliveries', [AdminController::class, 'listDeliveries']);
+    Route::post('/products/{product}/disable', [AdminController::class, 'disableProduct']);
+    Route::post('/products/{product}/enable', [AdminController::class, 'enableProduct']);
+    Route::put('/products/{product}', [AdminController::class, 'updateProduct']);
+    Route::delete('/products/{product}', [AdminController::class, 'deleteProduct']);
 });

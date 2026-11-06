@@ -12,6 +12,11 @@ class DeliveryPolicy
         return in_array($user->role, ['Admin', 'Livreur']);
     }
 
+    public function create(User $user): bool
+    {
+        return $user->isAdmin();
+    }
+
     public function view(User $user, DeliveryGroup $deliveryGroup): bool
     {
         if ($user->isAdmin()) {
