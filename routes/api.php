@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\CustomerDashboardController;
 use App\Http\Controllers\Api\AdminController;
 use App\Http\Controllers\Api\CartController;
 use App\Http\Controllers\Api\ProfileController;
+use App\Http\Controllers\Api\AccountController;
 
 use App\Http\Controllers\Api\PublicController;
 
@@ -93,6 +94,30 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/farmer/orders', [FarmerDashboardController::class, 'receivedOrders']);
     Route::get('/farmer/analytics/products', [FarmerDashboardController::class, 'popularProducts']);
     Route::get('/farmers/harvests', [HarvestController::class, 'farmerHarvests']);
+    /*
+|--------------------------------------------------------------------------
+| Gestion du compte utilisateur
+|--------------------------------------------------------------------------
+*/
+
+Route::prefix('account')->group(function () {
+
+    Route::get('/', [
+        AccountController::class,
+        'show',
+    ]);
+
+    Route::put('/', [
+        AccountController::class,
+        'update',
+    ]);
+
+    Route::patch('/password', [
+        AccountController::class,
+        'updatePassword',
+    ]);
+
+}); 
 });
 
 // Admin Panel
@@ -127,3 +152,4 @@ Route::put('/profile/buyer', [
     ProfileController::class,
     'updateBuyer',
 ]);
+
