@@ -9,6 +9,11 @@ class FarmerProfile extends Model
 {   
      protected $fillable = [
         'user_id',
+        'farm_name',
+        'description',
+        'address',
+        'city',
+        'region',
     ];
 
     public function user(): BelongsTo

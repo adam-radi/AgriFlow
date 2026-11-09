@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\FarmerDashboardController;
 use App\Http\Controllers\Api\CustomerDashboardController;
 use App\Http\Controllers\Api\AdminController;
 use App\Http\Controllers\Api\CartController;
+use App\Http\Controllers\Api\ProfileController;
 
 use App\Http\Controllers\Api\PublicController;
 
@@ -111,3 +112,18 @@ Route::middleware('auth:sanctum')->prefix('admin')->group(function () {
     Route::put('/products/{product}', [AdminController::class, 'updateProduct']);
     Route::delete('/products/{product}', [AdminController::class, 'deleteProduct']);
 });
+
+Route::get('/profile', [
+    ProfileController::class,
+    'show',
+]);
+
+Route::put('/profile/farmer', [
+    ProfileController::class,
+    'updateFarmer',
+]);
+
+Route::put('/profile/buyer', [
+    ProfileController::class,
+    'updateBuyer',
+]);
