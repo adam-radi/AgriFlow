@@ -8,6 +8,7 @@ use Illuminate\Validation\ValidationException;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use App\Http\Middleware\EnsureUserHasRole;
 use Symfony\Component\HttpKernel\Exception\ThrottleRequestsException;
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -18,7 +19,9 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        $middleware->alias([
+        'role' => EnsureUserHasRole::class,
+        ]);     
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->render(function (ValidationException $e, Request $request) {
