@@ -5,6 +5,7 @@ import "./assets/app.css";
 import App from './App';
 import AppProvider from './app/providers/AppProvider';
 import store from './app/store';
+import "./assets/agri-flow-design-system.css";
 import { injectStore } from './api/axiosClient';
 
 // Inject the Redux store into axiosClient AFTER all modules are initialized.
