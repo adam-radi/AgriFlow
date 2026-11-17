@@ -1,0 +1,55 @@
+
+const ENDPOINTS = {
+    AUTH: {
+        LOGIN: "/auth/Login",
+        REGISTER: "/auth/register",
+        LOGOUT: "/logout",
+        ME: "/me",
+    },
+
+    PRODUCTS: "/products",
+    PUBLIC_PRODUCTS: "/public/products",
+    PUBLIC_PRODUCT_DETAILS: (id) => `/public/products/${id}`,
+
+    HARVESTS: "/harvest",
+    HARVEST_DETAILS: (id) => `/harvest/${id}`,
+    HARVEST_CREATE: "/harvest",
+    HARVEST_UPDATE: (id) => `/harvest/${id}`,
+    HARVEST_DELETE: (id) => `/harvest/${id}`,
+    FARMER_HARVESTS: "/farmers/harvests",
+    HARVEST_FORECAST: (id) => `/harvest/${id}/forecast`,
+    HARVEST_ORDERS: (id) => `/harvest/${id}/orders`,
+    ADMIN_HARVESTS: "/admin/harvests",
+
+    ORDERS: "/orders",
+    ORDER_DETAILS: (id) => `/orders/${id}`,
+    ORDER_CREATE: "/orders",
+    CART: "/cart",
+    CART_ITEM: (id) => `/cart/${id}`,
+    FARMER_ORDERS: "/farmer/orders",
+    ADMIN_ORDERS: "/admin/orders",
+    DELIVERY: {
+        BASE: "/deliveries",
+        CREATE: "/deliveries",
+        GET_ONE: (id) => `/deliveries/${id}`,
+        ASSIGN_LIVREUR: (id, userId) => `/deliveries/${id}/assign/${userId}`,
+        UPDATE_STATUS: (id) => `/deliveries/${id}/status`,
+        ROUTE: (id) => `/deliveries/${id}/route`,
+    },
+    ADMIN: {
+        BASE: "/admin",
+        USERS: "/admin/users",
+        FARMERS: "/admin/farmers",
+        PRODUCTS: "/admin/products",
+        ORDERS: "/admin/orders",
+        HARVESTS: "/admin/harvests",
+        STATS: "/admin/stats",
+        VALIDATE_FARMER: (id) => `/admin/farmers/${id}/approve`,
+        REJECT_FARMER: (id) => `/admin/farmers/${id}/reject`,
+        SUSPEND_USER: (id) => `/admin/users/${id}`,
+        DISABLE_PRODUCT: (id) => `/admin/products/${id}/disable`,
+    },
+    PAYMENTS: "/payments",
+};
+
+export default ENDPOINTS;
