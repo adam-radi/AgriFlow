@@ -59,25 +59,21 @@ export default function OrderDetailsPage() {
                                     <p className="mb-0">{order?.created_at ? new Date(order.created_at).toLocaleDateString() : "—"}</p>
                                 </div>
                                 <div>
-                                    <small className="text-muted text-uppercase fw-semibold">Delivery Address</small>
-                                    <p className="mb-0">{order?.delivery_address || "—"}</p>
+                                    <small className="text-muted text-uppercase fw-semibold">Zone</small>
+                                    <p className="mb-0">{order?.zone || "—"}</p>
                                 </div>
-                                <div>
-                                    <small className="text-muted text-uppercase fw-semibold">Phone</small>
-                                    <p className="mb-0">{order?.phone || "—"}</p>
-                                </div>
+                                {order?.customer && (
+                                    <div>
+                                        <small className="text-muted text-uppercase fw-semibold">Customer</small>
+                                        <p className="mb-0">{order.customer.name}</p>
+                                    </div>
+                                )}
                                 <div>
                                     <small className="text-muted text-uppercase fw-semibold">Total</small>
                                     <p className="mb-0 fs-5 fw-bold text-success">
-                                        {order?.total ? `${Number(order.total).toFixed(2)} MAD` : "—"}
+                                        {order?.total_amount ? `${Number(order.total_amount).toFixed(2)} MAD` : "—"}
                                     </p>
                                 </div>
-                                {order?.notes && (
-                                    <div>
-                                        <small className="text-muted text-uppercase fw-semibold">Notes</small>
-                                        <p className="mb-0">{order.notes}</p>
-                                    </div>
-                                )}
                             </div>
                         </Card.Body>
                     </Card>
@@ -91,9 +87,9 @@ export default function OrderDetailsPage() {
                                 <thead className="table-dark">
                                     <tr>
                                         <th>Product</th>
-                                        <th>Pack Qty</th>
-                                        <th>Weight</th>
-                                        <th>Price</th>
+                                        <th>Pack</th>
+                                        <th>Qty</th>
+                                        <th>Unit Price</th>
                                         <th>Subtotal</th>
                                     </tr>
                                 </thead>
@@ -105,22 +101,19 @@ export default function OrderDetailsPage() {
                                     ) : (
                                         order.items.map((item, i) => (
                                             <tr key={item.id || i}>
-                                                <td className="fw-medium">{item.product_name || item.product?.name || `Product #${item.product_id}`}</td>
-                                                <td>{item.pack_quantity ?? item.quantity ?? "—"}</td>
-                                                <td>{item.weight ? `${item.weight} kg` : "—"}</td>
-                                                <td>{item.unit_price ? `${Number(item.unit_price).toFixed(2)} MAD/kg` : "—"}</td>
-                                                <td className="fw-bold">{item.subtotal ? `${Number(item.subtotal).toFixed(2)} MAD` : "—"}</td>
+                                                <td className="fw-medium">{item.product?.name || `Product #${item.product_id}`}</td>
+                                                <td>{item.quantity_standard?.label || "—"}</td>
+                                                <td>{item.quantity ?? "—"}</td>
+                                                <td>{item.unit_price != null ? `${Number(item.unit_price).toFixed(2)} MAD` : "—"}</td>
+                                                <td className="fw-bold">{item.subtotal != null ? `${Number(item.subtotal).toFixed(2)} MAD` : "—"}</td>
                                             </tr>
                                         ))
                                     )}
                                 </tbody>
                             </Table>
-                            {order?.harvest_date && (
+                            {order?.delivery_date && (
                                 <Alert variant="info" className="mb-0">
-                                    <small>🗓️ Harvest date: {new Date(order.harvest_date).toLocaleDateString()}</small>
-                                    {order?.estimated_delivery_date && (
-                                        <><br /><small>🚚 Est. delivery: {new Date(order.estimated_delivery_date).toLocaleDateString()}</small></>
-                                    )}
+                                    <small>🚚 Delivery date: {new Date(order.delivery_date).toLocaleDateString()}</small>
                                 </Alert>
                             )}
                         </Card.Body>

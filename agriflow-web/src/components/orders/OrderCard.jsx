@@ -26,7 +26,7 @@ export default function OrderCard({ order, onView }) {
                     <Col>
                         <div className="text-muted">Total</div>
                         <div className="fw-bold text-success">
-                            {order.total ? `${Number(order.total).toFixed(2)} MAD` : "—"}
+                            {order.total_amount ? `${Number(order.total_amount).toFixed(2)} MAD` : order.total ? `${Number(order.total).toFixed(2)} MAD` : "—"}
                         </div>
                     </Col>
                 </Row>

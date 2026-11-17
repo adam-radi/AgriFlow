@@ -1,6 +1,6 @@
 import { Card } from "react-bootstrap";
 
-export default function CartSummary({ cartItems = [], cartTotal = 0, cartTotalWeight = 0, cartCount = 0 }) {
+export default function CartSummary({ cartItems = [], cartTotal = 0, cartCount = 0 }) {
     return (
         <Card className="shadow-sm border-0" style={{ borderRadius: "12px" }}>
             <Card.Body>
@@ -9,10 +9,6 @@ export default function CartSummary({ cartItems = [], cartTotal = 0, cartTotalWe
                     <div className="d-flex justify-content-between">
                         <span className="text-muted">Total Packs</span>
                         <span className="fw-bold">{cartCount}</span>
-                    </div>
-                    <div className="d-flex justify-content-between">
-                        <span className="text-muted">Total Weight</span>
-                        <span className="fw-bold">{cartTotalWeight} kg</span>
                     </div>
                     <hr />
                     <div className="d-flex justify-content-between">

@@ -10,7 +10,6 @@ export default function AdminStatsCard({ title, value, icon, trend }) {
                         style={{
                             width: 48,
                             height: 48,
-                            fontSize: "1.5rem",
                             backgroundColor: "#e8f5e9",
                             color: "#2d6a4f",
                             flexShrink: 0,

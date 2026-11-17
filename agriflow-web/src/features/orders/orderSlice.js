@@ -1,13 +1,16 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { orderAPI } from "./orderApi";
-import { mockOrders } from "../../api/mockData";
+
+function unwrapData(res) {
+    return res.data?.data ?? res.data;
+}
 
 export const createOrder = createAsyncThunk(
     "orders/create",
     async (payload, { rejectWithValue }) => {
         try {
             const res = await orderAPI.createOrder(payload);
-            return res.data;
+            return unwrapData(res);
         } catch (err) {
             return rejectWithValue(err.response?.data || "Failed to create order");
         }
@@ -19,15 +22,9 @@ export const fetchOrders = createAsyncThunk(
     async (_, { rejectWithValue }) => {
         try {
             const res = await orderAPI.getOrders();
-            const data = res.data;
-            const hasData = Array.isArray(data) ? data.length > 0 : (data.results?.length > 0 || data.orders?.length > 0);
-            if (!hasData) {
-                return mockOrders;
-            }
-            return data;
+            return unwrapData(res);
         } catch (err) {
-            console.warn("API orders call failed, falling back to mockOrders:", err);
-            return mockOrders;
+            return rejectWithValue(err.response?.data || "Failed to load orders");
         }
     }
 );
@@ -37,11 +34,8 @@ export const fetchOrderById = createAsyncThunk(
     async (id, { rejectWithValue }) => {
         try {
             const res = await orderAPI.getOrder(id);
-            return res.data;
+            return unwrapData(res);
         } catch (err) {
-            console.warn(`API order detail call failed for id ${id}, falling back to mockOrders:`, err);
-            const found = mockOrders.find(o => o.id === parseInt(id) || o.id === id);
-            if (found) return found;
             return rejectWithValue(err.response?.data || "Order not found");
         }
     }
@@ -52,15 +46,9 @@ export const fetchFarmerOrders = createAsyncThunk(
     async (_, { rejectWithValue }) => {
         try {
             const res = await orderAPI.getFarmerOrders();
-            const data = res.data;
-            const hasData = Array.isArray(data) ? data.length > 0 : (data.results?.length > 0 || data.orders?.length > 0);
-            if (!hasData) {
-                return mockOrders;
-            }
-            return data;
+            return unwrapData(res);
         } catch (err) {
-            console.warn("API farmer orders call failed, falling back to mockOrders:", err);
-            return mockOrders;
+            return rejectWithValue(err.response?.data || "Failed to load farmer orders");
         }
     }
 );
@@ -70,36 +58,14 @@ export const fetchAdminOrders = createAsyncThunk(
     async (_, { rejectWithValue }) => {
         try {
             const res = await orderAPI.getAdminOrders();
-            const data = res.data;
-            const hasData = Array.isArray(data) ? data.length > 0 : (data.results?.length > 0 || data.orders?.length > 0);
-            if (!hasData) {
-                return mockOrders;
-            }
-            return data;
+            return unwrapData(res);
         } catch (err) {
-            console.warn("API admin orders call failed, falling back to mockOrders:", err);
-            return mockOrders;
+            return rejectWithValue(err.response?.data || "Failed to load admin orders");
         }
     }
 );
 
-const loadCart = () => {
-    try {
-        const data = localStorage.getItem("agriflow_cart");
-        return data ? JSON.parse(data) : [];
-    } catch {
-        return [];
-    }
-};
-
-const saveCart = (items) => {
-    try {
-        localStorage.setItem("agriflow_cart", JSON.stringify(items));
-    } catch { /* ignore */ }
-};
-
 const initialState = {
-    cartItems: loadCart(),
     orders: [],
     currentOrder: null,
     loading: false,
@@ -111,45 +77,6 @@ const orderSlice = createSlice({
     name: "orders",
     initialState,
     reducers: {
-        addToCart: (state, action) => {
-            const item = action.payload;
-            const idx = state.cartItems.findIndex(
-                (i) => i.productId === item.productId && i.harvestId === item.harvestId
-            );
-            if (idx !== -1) {
-                state.cartItems[idx].packQuantity += item.packQuantity;
-                state.cartItems[idx].totalWeight =
-                    state.cartItems[idx].standardQuantity * state.cartItems[idx].packQuantity;
-                state.cartItems[idx].subtotal =
-                    state.cartItems[idx].unitPrice * state.cartItems[idx].totalWeight;
-            } else {
-                state.cartItems.push(item);
-            }
-            saveCart(state.cartItems);
-        },
-        removeFromCart: (state, action) => {
-            const { productId, harvestId } = action.payload;
-            state.cartItems = state.cartItems.filter(
-                (i) => !(i.productId === productId && i.harvestId === harvestId)
-            );
-            saveCart(state.cartItems);
-        },
-        updatePackQuantity: (state, action) => {
-            const { productId, harvestId, packQuantity } = action.payload;
-            const item = state.cartItems.find(
-                (i) => i.productId === productId && i.harvestId === harvestId
-            );
-            if (item) {
-                item.packQuantity = Math.max(1, packQuantity);
-                item.totalWeight = item.standardQuantity * item.packQuantity;
-                item.subtotal = item.unitPrice * item.totalWeight;
-            }
-            saveCart(state.cartItems);
-        },
-        clearCart: (state) => {
-            state.cartItems = [];
-            saveCart(state.cartItems);
-        },
         clearOrderError: (state) => {
             state.error = null;
         },
@@ -166,8 +93,6 @@ const orderSlice = createSlice({
             })
             .addCase(createOrder.fulfilled, (state, action) => {
                 state.loading = false;
-                state.cartItems = [];
-                saveCart(state.cartItems);
                 state.orders.unshift(action.payload);
                 state.currentOrder = action.payload;
                 state.success = "Order placed successfully!";
@@ -185,7 +110,7 @@ const orderSlice = createSlice({
             .addCase(fetchOrders.fulfilled, (state, action) => {
                 state.loading = false;
                 const data = action.payload;
-                state.orders = Array.isArray(data) ? data : data.results ?? data.orders ?? [];
+                state.orders = Array.isArray(data) ? data : data.results ?? data.orders ?? data.data ?? [];
             })
             .addCase(fetchOrders.rejected, (state, action) => {
                 state.loading = false;
@@ -215,7 +140,7 @@ const orderSlice = createSlice({
             .addCase(fetchFarmerOrders.fulfilled, (state, action) => {
                 state.loading = false;
                 const data = action.payload;
-                state.orders = Array.isArray(data) ? data : data.results ?? data.orders ?? [];
+                state.orders = Array.isArray(data) ? data : data.results ?? data.orders ?? data.data ?? [];
             })
             .addCase(fetchFarmerOrders.rejected, (state, action) => {
                 state.loading = false;
@@ -230,7 +155,7 @@ const orderSlice = createSlice({
             .addCase(fetchAdminOrders.fulfilled, (state, action) => {
                 state.loading = false;
                 const data = action.payload;
-                state.orders = Array.isArray(data) ? data : data.results ?? data.orders ?? [];
+                state.orders = Array.isArray(data) ? data : data.results ?? data.orders ?? data.data ?? [];
             })
             .addCase(fetchAdminOrders.rejected, (state, action) => {
                 state.loading = false;
@@ -239,13 +164,6 @@ const orderSlice = createSlice({
     },
 });
 
-export const {
-    addToCart,
-    removeFromCart,
-    updatePackQuantity,
-    clearCart,
-    clearOrderError,
-    clearOrderSuccess,
-} = orderSlice.actions;
+export const { clearOrderError, clearOrderSuccess } = orderSlice.actions;
 
 export default orderSlice.reducer;

@@ -23,8 +23,8 @@ function mapHarvestToForm(harvest) {
         product_id: harvest.product_id || harvest.product?.id || "",
         start_date: harvest.start_date ? harvest.start_date.split("T")[0] : "",
         end_date: harvest.end_date ? harvest.end_date.split("T")[0] : "",
-        estimated_quantity: harvest.estimated_quantity || "",
-        max_quantity_per_day: harvest.max_quantity_per_day || "",
+        estimated_total_qte: harvest.estimated_total_qte || "",
+        max_daily_qte: harvest.max_daily_qte || "",
     };
 }
 
@@ -58,9 +58,9 @@ export default function EditHarvestPage() {
         const payload = {
             product_id: Number(form.product_id),
             start_date: form.start_date,
-            end_date: form.end_date,
-            estimated_quantity: Number(form.estimated_quantity),
-            max_quantity_per_day: form.max_quantity_per_day ? Number(form.max_quantity_per_day) : undefined,
+            end_date: form.end_date || null,
+            estimated_total_qte: Number(form.estimated_total_qte),
+            max_daily_qte: form.max_daily_qte ? Number(form.max_daily_qte) : null,
         };
 
         const result = await dispatch(updateHarvest({ id, data: payload }));

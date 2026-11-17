@@ -42,7 +42,7 @@ export default function OrderTable({ orders = [], role = "client" }) {
                             {role !== "client" && <td>{order.customer_name || order.customer?.name || "—"}</td>}
                             <td>{order.items_count ?? order.items?.length ?? 0}</td>
                             <td className="fw-bold text-success">
-                                {order.total ? `${Number(order.total).toFixed(2)} MAD` : "—"}
+                                {order.total_amount ? `${Number(order.total_amount).toFixed(2)} MAD` : "—"}
                             </td>
                             <td>
                                 <Badge bg={statusVariant[order.status] || "light"} className="text-capitalize">

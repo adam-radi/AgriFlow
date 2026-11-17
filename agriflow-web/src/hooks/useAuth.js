@@ -1,10 +1,8 @@
 
 
-
 import { useDispatch, useSelector } from "react-redux"
 import { selectUser, selectIsAuthenticated, selectUserRole } from "../features/auth/authSelectors";
-
-import {logout} from "../features/auth/authSlice";
+import { logoutUser } from "../features/auth/authThunks";
 
 export const useAuth = () => {
     const dispatch = useDispatch();
@@ -13,16 +11,13 @@ export const useAuth = () => {
     const role = useSelector(selectUserRole);
 
     const handleLogout = () => {
-        dispatch(logout())
+        dispatch(logoutUser())
     }
-    
-    
+
     return {
-        user , 
+        user,
         isAuth,
         role,
-        logout:handleLogout,
+        logout: handleLogout,
     };
-
-
 };

@@ -67,7 +67,7 @@ export default function HarvestTable({ harvests = [], onSearch, searchValue, onF
                                 </td>
                                 <td>{h.start_date ? new Date(h.start_date).toLocaleDateString() : "—"}</td>
                                 <td>{h.end_date ? new Date(h.end_date).toLocaleDateString() : "—"}</td>
-                                <td>{h.estimated_quantity ?? "—"}</td>
+                                <td>{h.estimated_total_qte ?? "—"}</td>
                                 <td>{h.remaining_capacity ?? "—"}</td>
                                 <td>
                                     <Link to={`/admin/harvests/${h.id}`} className="btn btn-outline-success btn-sm">

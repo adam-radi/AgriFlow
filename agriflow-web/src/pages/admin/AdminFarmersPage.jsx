@@ -13,7 +13,7 @@ export default function AdminFarmersPage() {
     const loading = useSelector(selectAdminLoading);
 
     useEffect(() => {
-        dispatch(fetchFarmers());
+        dispatch(fetchFarmers({ role: "Farmer" }));
     }, [dispatch]);
 
     return (

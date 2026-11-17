@@ -10,6 +10,7 @@ import {
     selectUserRole,
 } from "../features/auth/authSelectors";
 import "../assets/auth.css";
+import Logo from "../components/layout/Logo";
 
 export default function LoginPage() {
     const [formData, setFormData] = useState({ email: "", password: "" });
@@ -33,12 +34,12 @@ export default function LoginPage() {
     // Redirect based on role after login
     if (isAuthenticated) {
         const roleMap = {
-            Admin: "/dashboard/admin",
-            Farmer: "/dashboard/farmer",
-            Client: "/dashboard/client",
-            Livreur: "/dashboard/delivery",
+            Admin: "/admin",
+            Farmer: "/farmer/products",
+            Client: "/products",
+            Livreur: "/delivery/dashboard",
         };
-        return <Navigate to={roleMap[role] || "/dashboard"} replace />;
+        return <Navigate to={roleMap[role] || "/"} replace />;
     }
 
     return (
@@ -48,7 +49,7 @@ export default function LoginPage() {
                 {/* Header */}
                 <div className="auth-header">
                     <div className="auth-logo">
-                        <div className="auth-logo-icon">🌿</div>
+                        <Logo height={44} round className="auth-logo-img" />
                         <div className="auth-logo-text">Agri<span>Flow</span></div>
                     </div>
                     <p className="auth-subtitle">Fresh from farm to your table</p>
@@ -147,6 +148,8 @@ export default function LoginPage() {
                             </Link>
                         </div>
                     </div>
+
+
                 </div>
             </div>
         </div>

@@ -9,37 +9,24 @@ export default function CheckoutForm({ form, onChange, onSubmit, loading }) {
     return (
         <Form onSubmit={onSubmit}>
             <Form.Group className="mb-3">
-                <Form.Label>Delivery Address *</Form.Label>
+                <Form.Label>Delivery Zone *</Form.Label>
                 <Form.Control
                     as="textarea"
                     rows={2}
                     name="delivery_address"
                     value={form.delivery_address || ""}
                     onChange={handleChange}
-                    placeholder="Enter your delivery address"
+                    placeholder="Enter your delivery zone/address"
                     required
                 />
             </Form.Group>
             <Form.Group className="mb-3">
-                <Form.Label>Phone Number *</Form.Label>
+                <Form.Label>Preferred Delivery Date</Form.Label>
                 <Form.Control
-                    type="tel"
-                    name="phone"
-                    value={form.phone || ""}
+                    type="date"
+                    name="delivery_date"
+                    value={form.delivery_date || ""}
                     onChange={handleChange}
-                    placeholder="e.g. 06XXXXXXXX"
-                    required
-                />
-            </Form.Group>
-            <Form.Group className="mb-3">
-                <Form.Label>Notes</Form.Label>
-                <Form.Control
-                    as="textarea"
-                    rows={2}
-                    name="notes"
-                    value={form.notes || ""}
-                    onChange={handleChange}
-                    placeholder="Any special instructions?"
                 />
             </Form.Group>
             <Button variant="success" type="submit" className="w-100" disabled={loading}>

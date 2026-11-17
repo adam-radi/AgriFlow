@@ -18,8 +18,8 @@ export default function DeliveryRouteMap({ group }) {
                         <p className="mb-0 small fw-medium mt-2">
                             {group?.zone ? `Route map for ${group.zone}` : "Map integration (coming soon)"}
                         </p>
-                        {group?.orders_count > 0 && (
-                            <p className="mb-0 small">{group.orders_count} stop(s) to optimize</p>
+                        {group?.items?.length > 0 && (
+                            <p className="mb-0 small">{group.items.length} stop(s) to optimize</p>
                         )}
                     </div>
                 </div>

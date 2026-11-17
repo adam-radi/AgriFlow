@@ -1,10 +1,12 @@
-- [x] Fix loginPage.jsx
-- [x] Fix RegisterClient.jsx
-- [x] Fix RegisterFarmerPage.jsx
-- [x] Complete AuthRoutes.jsx (routes only for /login, /register/client, /register/farmer)
-- [x] Fix authThunks.js exports & endpoint usage (minimal for pages)
-- [x] Fix authSlice.js extraReducers references (minimal for pages)
-- [x] Fix ProtectedRoute.jsx selectors typo (minimal compile)
-- [x] Run npm run build in agriflow-web to ensure compile
+# AgriFlow Functional Audit - TODO
 
+- [x] Understand repo structure (frontend + backend) and routing/role guard basics
+- [x] Inspect frontend auth/token handling (authSlice/authThunks/axiosClient/endpoints) + ProtectedRoute
+- [x] Inspect backend API route map + AuthController/AuthService
+- [x] Inspect backend core controllers (Product/Order/Delivery/Auth/Havest/Payment)
+- [x] Inspect backend policies (Product/Harvest/Order/Delivery/Payment)
+- [x] Inspect core business services (OrderService/DeliveryService/PaymentService/HavestService)
+- [ ] Inspect remaining frontend role pages + API slices for each role (admin/farmer/client/delivery)
+- [ ] Inspect backend dashboard/admin endpoints/services/resources for response shape
+- [ ] Produce COMPLETE functional audit report in required format
 

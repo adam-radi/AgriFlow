@@ -17,4 +17,12 @@ export default defineConfig({
   optimizeDeps: {
     include: ['react', 'react-dom', 'react-redux', 'react-bootstrap'],
   },
+  server: {
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+      },
+    },
+  },
 })

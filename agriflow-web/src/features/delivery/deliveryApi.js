@@ -11,11 +11,11 @@ export const deliveryAPI = {
     createGroup: (data) =>
         axiosClient.post(ENDPOINTS.DELIVERY.CREATE, data),
 
-    assignOrders: (id, payload) =>
-        axiosClient.post(ENDPOINTS.DELIVERY.ASSIGN_ORDERS(id), payload),
+    assignLivreur: (groupId, userId) =>
+        axiosClient.post(ENDPOINTS.DELIVERY.ASSIGN_LIVREUR(groupId, userId)),
 
     updateStatus: (id, status) =>
-        axiosClient.patch(ENDPOINTS.DELIVERY.UPDATE_STATUS(id), { status }),
+        axiosClient.post(`/deliveries/${id}/status/${status}`),
 
     getRoute: (id) =>
         axiosClient.get(ENDPOINTS.DELIVERY.ROUTE(id)),

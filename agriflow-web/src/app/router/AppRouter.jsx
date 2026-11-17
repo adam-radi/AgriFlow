@@ -11,16 +11,16 @@ import LoginPage from "../../pages/LoginPage";
 import RegisterClientPage from "../../pages/RegisterClient";
 import RegisterFarmerPage from "../../pages/RegisterFarmerPage";
 
-// Public product pages
+// Public pages
+import HomePage from "../../pages/public/HomePage";
 import ProductsPage from "../../pages/public/ProductsPage";
 import ProductDetailsPage from "../../pages/public/ProductDetailsPage";
 
-// Farmer product pages
+// Farmer pages
+import FarmerDashboard from "../../pages/farmer/FarmerDashboard";
 import FarmerProductsPage from "../../pages/farmer/products/FarmerProductsPage";
 import CreateProductPage from "../../pages/farmer/products/CreateProductPage";
 import EditProductPage from "../../pages/farmer/products/EditProductPage";
-
-// Farmer harvest pages
 import FarmerHarvestsPage from "../../pages/farmer/harvests/FarmerHarvestsPage";
 import CreateHarvestPage from "../../pages/farmer/harvests/CreateHarvestPage";
 import EditHarvestPage from "../../pages/farmer/harvests/EditHarvestPage";
@@ -32,6 +32,7 @@ import AdminUsersPage from "../../pages/admin/AdminUsersPage";
 import AdminFarmersPage from "../../pages/admin/AdminFarmersPage";
 import AdminProductsPage from "../../pages/admin/AdminProductsPage";
 import AdminOrdersPage from "../../pages/admin/AdminOrdersPage";
+import AdminOrderDetailsPage from "../../pages/admin/AdminOrderDetailsPage";
 import AdminHarvestsPage from "../../pages/admin/AdminHarvestsPage";
 
 // Delivery pages
@@ -45,31 +46,17 @@ import CheckoutPage from "../../pages/client/checkout/CheckoutPage";
 import OrdersPage from "../../pages/client/orders/OrdersPage";
 import OrderDetailsPage from "../../pages/client/orders/OrderDetailsPage";
 
-// Placeholder dashboard pages (will be replaced later)
-const PlaceholderDashboard = ({ title, emoji }) => (
-    <div style={{
-        minHeight: "100vh",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        background: "linear-gradient(135deg,#e8f5e9,#f0f7f4)",
-        fontFamily: "Inter, sans-serif"
-    }}>
-        <div style={{ textAlign: "center" }}>
-            <div style={{ fontSize: "4rem", marginBottom: "1rem" }}>{emoji}</div>
-            <h1 style={{ color: "#2d6a4f", fontWeight: 700 }}>{title} Dashboard</h1>
-            <p style={{ color: "#6c757d" }}>Coming soon...</p>
-        </div>
-    </div>
-);
-
 function AppRouter() {
     return (
         <Router>
             <Routes>
 
-                {/* Redirect root → login */}
-                <Route path="/" element={<Navigate to="/login" replace />} />
+                {/* ── Public Marketplace & Home ───────────────────────── */}
+                <Route element={<PublicLayout />}>
+                    <Route path="/" element={<HomePage />} />
+                    <Route path="/products" element={<ProductsPage />} />
+                    <Route path="/products/:id" element={<ProductDetailsPage />} />
+                </Route>
 
                 {/* ── Public Auth Routes ─────────────────────────────── */}
                 <Route element={<AuthLayout />}>
@@ -78,49 +65,9 @@ function AppRouter() {
                     <Route path="/register/farmer" element={<RegisterFarmerPage />} />
                 </Route>
 
-                {/* ── Public Product Marketplace ─────────────────────── */}
-                <Route element={<PublicLayout />}>
-                    <Route path="/products" element={<ProductsPage />} />
-                    <Route path="/products/:id" element={<ProductDetailsPage />} />
-                </Route>
-
                 {/* ── Protected Dashboards ───────────────────────────── */}
-                <Route
-                    path="/dashboard/client"
-                    element={
-                        <ProtectedRoute allowedRoles={["Client"]}>
-                            <PlaceholderDashboard title="Client" emoji="🛒" />
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/dashboard/farmer"
-                    element={
-                        <ProtectedRoute allowedRoles={["Farmer"]}>
-                            <PlaceholderDashboard title="Farmer" emoji="🌾" />
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/dashboard/delivery"
-                    element={
-                        <ProtectedRoute allowedRoles={["Livreur"]}>
-                            <PlaceholderDashboard title="Delivery" emoji="🚚" />
-                        </ProtectedRoute>
-                    }
-                />
 
-                {/* Generic dashboard */}
-                <Route
-                    path="/dashboard"
-                    element={
-                        <ProtectedRoute>
-                            <PlaceholderDashboard title="Dashboard" emoji="📊" />
-                        </ProtectedRoute>
-                    }
-                />
-
-                {/* ── Farmer Product Management (Protected) ─────────── */}
+                {/* ── Farmer Dashboard & Management (Protected) ─────── */}
                 <Route
                     element={
                         <ProtectedRoute allowedRoles={["Farmer"]}>
@@ -128,19 +75,10 @@ function AppRouter() {
                         </ProtectedRoute>
                     }
                 >
+                    <Route path="/farmer/dashboard" element={<FarmerDashboard />} />
                     <Route path="/farmer/products" element={<FarmerProductsPage />} />
                     <Route path="/farmer/products/new" element={<CreateProductPage />} />
                     <Route path="/farmer/products/:id/edit" element={<EditProductPage />} />
-                </Route>
-
-                {/* ── Farmer Harvest Management (Protected) ─────────── */}
-                <Route
-                    element={
-                        <ProtectedRoute allowedRoles={["Farmer"]}>
-                            <FarmerLayout />
-                        </ProtectedRoute>
-                    }
-                >
                     <Route path="/farmer/harvests" element={<FarmerHarvestsPage />} />
                     <Route path="/farmer/harvests/create" element={<CreateHarvestPage />} />
                     <Route path="/farmer/harvests/:id" element={<HarvestDetailsPage />} />
@@ -160,6 +98,7 @@ function AppRouter() {
                     <Route path="/admin/farmers" element={<AdminFarmersPage />} />
                     <Route path="/admin/products" element={<AdminProductsPage />} />
                     <Route path="/admin/orders" element={<AdminOrdersPage />} />
+                    <Route path="/admin/orders/:id" element={<AdminOrderDetailsPage />} />
                     <Route path="/admin/harvests" element={<AdminHarvestsPage />} />
                     <Route path="/admin/delivery" element={<DeliveryDashboard />} />
                     <Route path="/admin/delivery/groups" element={<DeliveryGroupsPage />} />

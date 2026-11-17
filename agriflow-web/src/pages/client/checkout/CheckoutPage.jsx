@@ -1,40 +1,37 @@
-import { useState, useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { Card, Row, Col, Table, Alert } from "react-bootstrap";
+import { Card, Row, Col, Table, Alert, Button, Spinner } from "react-bootstrap";
 import { createOrder, clearOrderError, clearOrderSuccess } from "../../../features/orders/orderSlice";
+import { fetchCart, clearCart } from "../../../features/orders/cartSlice";
 import {
     selectCartItems,
     selectCartTotal,
-    selectCartTotalWeight,
     selectCartCount,
-    selectOrdersLoading,
-    selectOrdersError,
+    selectCartLoading,
+    selectCartError,
 } from "../../../features/orders/orderSelectors";
-import CartSummary from "../../../components/orders/CartSummary";
-import CheckoutForm from "../../../components/orders/CheckoutForm";
 
 export default function CheckoutPage() {
     const dispatch = useDispatch();
     const navigate = useNavigate();
     const cartItems = useSelector(selectCartItems);
     const cartTotal = useSelector(selectCartTotal);
-    const cartTotalWeight = useSelector(selectCartTotalWeight);
     const cartCount = useSelector(selectCartCount);
-    const loading = useSelector(selectOrdersLoading);
-    const error = useSelector(selectOrdersError);
-
-    const [form, setForm] = useState({
-        delivery_address: "",
-        phone: "",
-        notes: "",
-    });
+    const cartLoading = useSelector(selectCartLoading);
+    const orderLoading = useSelector((state) => state.orders.loading);
+    const error = useSelector((state) => state.orders.error);
+    const cartFetched = useRef(false);
 
     useEffect(() => {
-        if (cartItems.length === 0) {
+        dispatch(fetchCart()).then(() => { cartFetched.current = true; });
+    }, [dispatch]);
+
+    useEffect(() => {
+        if (cartFetched.current && !cartLoading && cartItems.length === 0) {
             navigate("/client/cart");
         }
-    }, [cartItems, navigate]);
+    }, [cartFetched.current, cartLoading, cartItems, navigate]);
 
     useEffect(() => {
         return () => {
@@ -48,19 +45,29 @@ export default function CheckoutPage() {
         dispatch(clearOrderError());
 
         const payload = {
-            delivery_address: form.delivery_address,
-            phone: form.phone,
-            notes: form.notes,
+            zone: cartItems[0]?.harvest?.product?.farmer?.zone || "",
             items: cartItems.map((item) => ({
-                product_id: item.productId,
-                pack_quantity: item.packQuantity,
+                harvest_id: item.harvest_id,
+                quantity_standard_id: item.quantity_standard_id,
+                quantity: item.quantity,
+                scheduled_harvest_date: item.harvest?.start_date || null,
             })),
         };
 
         const result = await dispatch(createOrder(payload));
         if (result.meta.requestStatus === "fulfilled") {
+            dispatch(clearCart());
             navigate("/client/orders");
         }
+    }
+
+    if (cartLoading && cartItems.length === 0) {
+        return (
+            <div className="container py-5 text-center">
+                <Spinner animation="border" variant="success" />
+                <p className="text-muted mt-2">Loading cart…</p>
+            </div>
+        );
     }
 
     return (
@@ -69,7 +76,7 @@ export default function CheckoutPage() {
 
             {error && (
                 <Alert variant="danger" dismissible onClose={() => dispatch(clearOrderError())}>
-                    {typeof error === "string" ? error : "Failed to place order"}
+                    {typeof error === "string" ? error : (error?.message || JSON.stringify(error) || "Failed to place order")}
                 </Alert>
             )}
 
@@ -82,50 +89,57 @@ export default function CheckoutPage() {
                                 <thead className="table-light">
                                     <tr>
                                         <th>Product</th>
+                                        <th>Pack</th>
                                         <th>Packs</th>
-                                        <th>Weight</th>
                                         <th>Price</th>
                                         <th>Subtotal</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {cartItems.map((item) => (
-                                        <tr key={`${item.productId}-${item.harvestId}`}>
-                                            <td className="fw-medium">{item.productName}</td>
-                                            <td>{item.packQuantity}</td>
-                                            <td>{item.totalWeight} kg</td>
-                                            <td>{Number(item.unitPrice).toFixed(2)} MAD/kg</td>
+                                        <tr key={item.id}>
+                                            <td className="fw-medium">{item.harvest?.product?.name || "—"}</td>
+                                            <td>{item.quantity_standard?.label || "Standard"}</td>
+                                            <td>{item.quantity}</td>
+                                            <td>{Number(item.unit_price).toFixed(2)} MAD</td>
                                             <td className="fw-bold">{Number(item.subtotal || 0).toFixed(2)} MAD</td>
                                         </tr>
                                     ))}
                                 </tbody>
                             </Table>
-                            {cartItems[0]?.harvestDate && (
-                                <Alert variant="info" className="mb-0">
-                                    <small>🗓️ Harvest date: {new Date(cartItems[0].harvestDate).toLocaleDateString()}</small>
-                                    {cartItems[0]?.estimatedDeliveryDate && (
-                                        <><br /><small>🚚 Est. delivery: {new Date(cartItems[0].estimatedDeliveryDate).toLocaleDateString()}</small></>
-                                    )}
-                                </Alert>
-                            )}
                         </Card.Body>
                     </Card>
 
                     <Card className="shadow-sm border-0 mt-3" style={{ borderRadius: "12px" }}>
                         <Card.Body>
                             <Card.Title className="h5 fw-bold mb-3">Delivery Details</Card.Title>
-                            <CheckoutForm form={form} onChange={setForm} onSubmit={handleSubmit} loading={loading} />
+                            <Button variant="success" className="w-100" onClick={handleSubmit} disabled={orderLoading || cartItems.length === 0}>
+                                {orderLoading ? "Placing Order…" : "Place Order"}
+                            </Button>
                         </Card.Body>
                     </Card>
                 </Col>
 
                 <Col lg={5}>
-                    <CartSummary
-                        cartItems={cartItems}
-                        cartTotal={cartTotal}
-                        cartTotalWeight={cartTotalWeight}
-                        cartCount={cartCount}
-                    />
+                    <Card className="shadow-sm border-0" style={{ borderRadius: "12px" }}>
+                        <Card.Body>
+                            <Card.Title className="h6 fw-bold mb-3">Cart Summary</Card.Title>
+                            <div className="d-flex flex-column gap-2">
+                                <div className="d-flex justify-content-between">
+                                    <span className="text-muted">Total Packs</span>
+                                    <span className="fw-bold">{cartCount}</span>
+                                </div>
+                                <hr />
+                                <div className="d-flex justify-content-between">
+                                    <span className="text-muted">Items</span>
+                                    <span className="fw-bold">{cartItems.length}</span>
+                                </div>
+                                <div className="d-flex justify-content-between">
+                                    <span className="fs-5 fw-bold text-success">{cartTotal.toFixed(2)} MAD</span>
+                                </div>
+                            </div>
+                        </Card.Body>
+                    </Card>
                 </Col>
             </Row>
         </div>

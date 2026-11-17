@@ -1,12 +1,16 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { deliveryAPI } from "./deliveryApi";
 
+function unwrap(res) {
+    return res.data?.data ?? res.data;
+}
+
 export const fetchDeliveryGroups = createAsyncThunk(
     "delivery/fetchGroups",
     async (params = {}, { rejectWithValue }) => {
         try {
             const res = await deliveryAPI.getGroups(params);
-            return res.data;
+            return unwrap(res);
         } catch (err) {
             return rejectWithValue(err.response?.data || "Failed to load delivery groups");
         }
@@ -18,21 +22,21 @@ export const createDeliveryGroup = createAsyncThunk(
     async (data, { rejectWithValue }) => {
         try {
             const res = await deliveryAPI.createGroup(data);
-            return res.data;
+            return unwrap(res);
         } catch (err) {
             return rejectWithValue(err.response?.data || "Failed to create delivery group");
         }
     }
 );
 
-export const assignOrdersToGroup = createAsyncThunk(
-    "delivery/assignOrders",
-    async ({ id, payload }, { rejectWithValue }) => {
+export const assignLivreurToGroup = createAsyncThunk(
+    "delivery/assignLivreur",
+    async ({ id, userId }, { rejectWithValue }) => {
         try {
-            const res = await deliveryAPI.assignOrders(id, payload);
-            return res.data;
+            const res = await deliveryAPI.assignLivreur(id, userId);
+            return unwrap(res);
         } catch (err) {
-            return rejectWithValue(err.response?.data || "Failed to assign orders");
+            return rejectWithValue(err.response?.data || "Failed to assign livreur");
         }
     }
 );
@@ -42,7 +46,7 @@ export const updateDeliveryStatus = createAsyncThunk(
     async ({ id, status }, { rejectWithValue }) => {
         try {
             const res = await deliveryAPI.updateStatus(id, status);
-            return res.data;
+            return unwrap(res);
         } catch (err) {
             return rejectWithValue(err.response?.data || "Failed to update status");
         }
@@ -54,7 +58,7 @@ export const fetchDeliveryGroupDetails = createAsyncThunk(
     async (id, { rejectWithValue }) => {
         try {
             const res = await deliveryAPI.getGroupById(id);
-            return res.data;
+            return unwrap(res);
         } catch (err) {
             return rejectWithValue(err.response?.data || "Group not found");
         }
@@ -142,19 +146,19 @@ const deliverySlice = createSlice({
             });
 
         builder
-            .addCase(assignOrdersToGroup.pending, (state) => {
+            .addCase(assignLivreurToGroup.pending, (state) => {
                 state.loading = true;
                 state.error = null;
             })
-            .addCase(assignOrdersToGroup.fulfilled, (state, action) => {
+            .addCase(assignLivreurToGroup.fulfilled, (state, action) => {
                 state.loading = false;
                 const updated = action.payload;
                 const idx = state.groups.findIndex((g) => g.id === updated.id);
                 if (idx !== -1) state.groups[idx] = updated;
                 if (state.selectedGroup?.id === updated.id) state.selectedGroup = updated;
-                state.success = "Orders assigned!";
+                state.success = "Livreur assigned!";
             })
-            .addCase(assignOrdersToGroup.rejected, (state, action) => {
+            .addCase(assignLivreurToGroup.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload;
             });

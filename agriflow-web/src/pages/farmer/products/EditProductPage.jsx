@@ -8,11 +8,6 @@ import {
     selectProductsError,
 } from "../../../features/products/productSelectors";
 
-const CATEGORIES = [
-    "Vegetables", "Fruits", "Grains", "Dairy", "Poultry",
-    "Herbs & Spices", "Legumes", "Nuts & Seeds", "Other",
-];
-
 export default function EditProductPage() {
     const { id } = useParams();
     const dispatch = useDispatch();
@@ -22,10 +17,10 @@ export default function EditProductPage() {
     const error = useSelector(selectProductsError);
 
     const [form, setForm] = useState(null);
+    const [quantities, setQuantities] = useState([{ label: "", price: "" }]);
     const [imageFile, setImageFile] = useState(null);
     const [previewUrl, setPreviewUrl] = useState(null);
 
-    // Load product into form when fetched
     useEffect(() => {
         dispatch(fetchProductById(id));
         return () => dispatch(clearSelectedProduct());
@@ -36,13 +31,16 @@ export default function EditProductPage() {
             setForm({
                 name: product.name || "",
                 description: product.description || "",
-                price: product.price || "",
                 category: product.category || "",
-                standard_quantity: product.standard_quantity || "",
                 harvest_date: product.harvest_date || "",
                 harvest_link: product.harvest_link || "",
                 is_available: product.is_available !== false,
             });
+            if (product.quantities && product.quantities.length > 0) {
+                setQuantities(
+                    product.quantities.map((q) => ({ label: q.label || "", price: q.price ?? "" }))
+                );
+            }
             if (product.image) setPreviewUrl(product.image);
         }
     }, [product]);
@@ -53,6 +51,23 @@ export default function EditProductPage() {
             ...prev,
             [name]: type === "checkbox" ? checked : value,
         }));
+    }
+
+    function handleQtyChange(index, field, value) {
+        setQuantities((prev) => {
+            const next = [...prev];
+            next[index] = { ...next[index], [field]: value };
+            return next;
+        });
+    }
+
+    function addQtyRow() {
+        setQuantities((prev) => [...prev, { label: "", price: "" }]);
+    }
+
+    function removeQtyRow(index) {
+        if (quantities.length <= 1) return;
+        setQuantities((prev) => prev.filter((_, i) => i !== index));
     }
 
     function handleImageChange(e) {
@@ -70,6 +85,12 @@ export default function EditProductPage() {
         Object.entries(form).forEach(([key, val]) => {
             if (val !== "" && val !== null) formData.append(key, val);
         });
+        quantities.forEach((qty, i) => {
+            if (qty.label && qty.price !== "") {
+                formData.append(`quantities[${i}][label]`, qty.label);
+                formData.append(`quantities[${i}][price]`, qty.price);
+            }
+        });
         if (imageFile) formData.append("image", imageFile);
 
         const result = await dispatch(updateProduct({ id, formData }));
@@ -78,7 +99,6 @@ export default function EditProductPage() {
         }
     }
 
-    // Loading state while product is being fetched
     if (!form) return (
         <>
             <style>{formStyles}</style>
@@ -96,7 +116,6 @@ export default function EditProductPage() {
             <style>{formStyles}</style>
             <div className="pf-page">
                 <div className="pf-container">
-                    {/* Header */}
                     <div className="pf-header">
                         <button className="pf-back" onClick={() => navigate(-1)} id="edit-back-btn">← Back</button>
                         <div>
@@ -113,7 +132,6 @@ export default function EditProductPage() {
 
                     <form onSubmit={handleSubmit} className="pf-form" id="edit-product-form">
                         <div className="pf-two-col">
-                            {/* Left: fields */}
                             <div className="pf-fields">
                                 <div className="pf-group">
                                     <label className="pf-label" htmlFor="ep-name">Product Name *</label>
@@ -129,11 +147,6 @@ export default function EditProductPage() {
 
                                 <div className="pf-row">
                                     <div className="pf-group">
-                                        <label className="pf-label" htmlFor="ep-price">Price (MAD) *</label>
-                                        <input id="ep-price" name="price" type="number" min="0" step="0.01"
-                                            className="pf-input" required value={form.price} onChange={handleChange} />
-                                    </div>
-                                    <div className="pf-group">
                                         <label className="pf-label" htmlFor="ep-category">Category</label>
                                         <select id="ep-category" name="category" className="pf-input pf-select"
                                             value={form.category} onChange={handleChange}>
@@ -143,19 +156,41 @@ export default function EditProductPage() {
                                             ))}
                                         </select>
                                     </div>
-                                </div>
-
-                                <div className="pf-row">
-                                    <div className="pf-group">
-                                        <label className="pf-label" htmlFor="ep-quantity">Standard Quantity</label>
-                                        <input id="ep-quantity" name="standard_quantity" className="pf-input"
-                                            value={form.standard_quantity} onChange={handleChange} />
-                                    </div>
                                     <div className="pf-group">
                                         <label className="pf-label" htmlFor="ep-harvest-date">Harvest Date</label>
                                         <input id="ep-harvest-date" name="harvest_date" type="date"
                                             className="pf-input" value={form.harvest_date} onChange={handleChange} />
                                     </div>
+                                </div>
+
+                                <div className="pf-group">
+                                    <label className="pf-label">Sizes / Quantities</label>
+                                    <div className="pf-quantities-list">
+                                        {quantities.map((qty, i) => (
+                                            <div key={i} className="pf-qty-row">
+                                                <input
+                                                    className="pf-input pf-qty-label"
+                                                    placeholder="e.g. 1kg, 250ml"
+                                                    value={qty.label}
+                                                    onChange={(e) => handleQtyChange(i, "label", e.target.value)}
+                                                />
+                                                <input
+                                                    className="pf-input pf-qty-price"
+                                                    type="number" min="0" step="0.01"
+                                                    placeholder="Price"
+                                                    value={qty.price}
+                                                    onChange={(e) => handleQtyChange(i, "price", e.target.value)}
+                                                />
+                                                {quantities.length > 1 && (
+                                                    <button type="button" className="pf-qty-remove"
+                                                        onClick={() => removeQtyRow(i)}>✕</button>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <button type="button" className="pf-qty-add" onClick={addQtyRow}>
+                                        + Add size
+                                    </button>
                                 </div>
 
                                 <div className="pf-group">
@@ -172,7 +207,6 @@ export default function EditProductPage() {
                                 </label>
                             </div>
 
-                            {/* Right: image */}
                             <div className="pf-image-col">
                                 <label className="pf-label">Product Image</label>
                                 <label htmlFor="ep-image" className="pf-dropzone" id="edit-image-drop">
@@ -213,6 +247,11 @@ export default function EditProductPage() {
         </>
     );
 }
+
+const CATEGORIES = [
+    "Vegetables", "Fruits", "Grains", "Dairy", "Poultry",
+    "Herbs & Spices", "Legumes", "Nuts & Seeds", "Other",
+];
 
 const formStyles = `
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
@@ -257,6 +296,23 @@ const formStyles = `
 .pf-textarea { resize:vertical; min-height:90px; }
 .pf-select { cursor:pointer; }
 .pf-select option { background:#0d2b1a; color:#f1f5f9; }
+.pf-quantities-list { display:flex; flex-direction:column; gap:.5rem; margin-bottom:.5rem; }
+.pf-qty-row { display:flex; gap:.5rem; align-items:center; }
+.pf-qty-label { flex:1; }
+.pf-qty-price { width:110px; }
+.pf-qty-remove {
+    background:rgba(239,68,68,.15); border:1px solid rgba(239,68,68,.3);
+    color:#f87171; width:32px; height:32px; border-radius:8px; cursor:pointer;
+    font-size:.85rem; display:flex; align-items:center; justify-content:center;
+    transition:background .18s; flex-shrink:0;
+}
+.pf-qty-remove:hover { background:rgba(239,68,68,.3); }
+.pf-qty-add {
+    background:none; border:1.5px dashed rgba(255,255,255,.15); color:#94a3b8;
+    border-radius:10px; padding:.5rem 1rem; font-size:.82rem; cursor:pointer;
+    font-family:inherit; transition:all .18s; width:fit-content;
+}
+.pf-qty-add:hover { border-color:#4ade80; color:#4ade80; background:rgba(74,222,128,.05); }
 .pf-checkbox-row {
     display:flex; align-items:center; gap:.7rem;
     cursor:pointer; font-size:.9rem; color:#94a3b8; font-weight:500;

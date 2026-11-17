@@ -1,21 +1,18 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { harvestAPI } from "./harvestApi";
-import { mockHarvests } from "../../api/mockData";
+
+function unwrapData(res) {
+    return res.data?.data ?? res.data;
+}
 
 export const fetchHarvests = createAsyncThunk(
     "harvests/fetchAll",
     async (params = {}, { rejectWithValue }) => {
         try {
             const res = await harvestAPI.getAll(params);
-            const data = res.data;
-            const hasData = Array.isArray(data) ? data.length > 0 : (data.results?.length > 0 || data.harvests?.length > 0);
-            if (!hasData) {
-                return mockHarvests;
-            }
-            return data;
+            return unwrapData(res);
         } catch (err) {
-            console.warn("API harvests call failed, falling back to mockHarvests:", err);
-            return mockHarvests;
+            return rejectWithValue(err.response?.data || "Failed to load harvests");
         }
     }
 );
@@ -25,11 +22,8 @@ export const fetchHarvestById = createAsyncThunk(
     async (id, { rejectWithValue }) => {
         try {
             const res = await harvestAPI.getById(id);
-            return res.data;
+            return unwrapData(res);
         } catch (err) {
-            console.warn(`API harvest detail call failed for id ${id}, falling back to mockHarvests:`, err);
-            const found = mockHarvests.find(h => h.id === parseInt(id) || h.id === id);
-            if (found) return found;
             return rejectWithValue(err.response?.data || "Harvest not found");
         }
     }
@@ -40,15 +34,9 @@ export const fetchFarmerHarvests = createAsyncThunk(
     async (_, { rejectWithValue }) => {
         try {
             const res = await harvestAPI.getFarmerHarvests();
-            const data = res.data;
-            const hasData = Array.isArray(data) ? data.length > 0 : (data.results?.length > 0 || data.harvests?.length > 0);
-            if (!hasData) {
-                return mockHarvests;
-            }
-            return data;
+            return unwrapData(res);
         } catch (err) {
-            console.warn("API farmer harvests call failed, falling back to mockHarvests:", err);
-            return mockHarvests;
+            return rejectWithValue(err.response?.data || "Failed to load farmer harvests");
         }
     }
 );
@@ -58,7 +46,7 @@ export const createHarvest = createAsyncThunk(
     async (data, { rejectWithValue }) => {
         try {
             const res = await harvestAPI.create(data);
-            return res.data;
+            return unwrapData(res);
         } catch (err) {
             return rejectWithValue(err.response?.data || "Failed to create harvest");
         }
@@ -70,7 +58,7 @@ export const updateHarvest = createAsyncThunk(
     async ({ id, data }, { rejectWithValue }) => {
         try {
             const res = await harvestAPI.update(id, data);
-            return res.data;
+            return unwrapData(res);
         } catch (err) {
             return rejectWithValue(err.response?.data || "Failed to update harvest");
         }
@@ -94,7 +82,7 @@ export const fetchHarvestForecast = createAsyncThunk(
     async (id, { rejectWithValue }) => {
         try {
             const res = await harvestAPI.getForecast(id);
-            return res.data;
+            return unwrapData(res);
         } catch (err) {
             return rejectWithValue(err.response?.data || "Failed to load forecast");
         }
@@ -106,7 +94,7 @@ export const fetchHarvestOrders = createAsyncThunk(
     async (id, { rejectWithValue }) => {
         try {
             const res = await harvestAPI.getOrders(id);
-            return res.data;
+            return unwrapData(res);
         } catch (err) {
             return rejectWithValue(err.response?.data || "Failed to load orders");
         }
@@ -118,15 +106,9 @@ export const fetchAdminHarvests = createAsyncThunk(
     async (params = {}, { rejectWithValue }) => {
         try {
             const res = await harvestAPI.getAdminHarvests(params);
-            const data = res.data;
-            const hasData = Array.isArray(data) ? data.length > 0 : (data.results?.length > 0 || data.harvests?.length > 0);
-            if (!hasData) {
-                return mockHarvests;
-            }
-            return data;
+            return unwrapData(res);
         } catch (err) {
-            console.warn("API admin harvests call failed, falling back to mockHarvests:", err);
-            return mockHarvests;
+            return rejectWithValue(err.response?.data || "Failed to load admin harvests");
         }
     }
 );
@@ -183,9 +165,9 @@ const harvestSlice = createSlice({
                 if (Array.isArray(data)) {
                     state.harvests = data;
                 } else {
-                    state.harvests = data.results ?? data.harvests ?? [];
-                    state.pagination.totalItems = data.count ?? data.total ?? state.harvests.length;
-                    state.pagination.totalPages = data.total_pages ?? Math.ceil(state.pagination.totalItems / 10);
+                    state.harvests = data.results ?? data.harvests ?? data.data ?? [];
+                    state.pagination.totalItems = data.count ?? data.total ?? data.meta?.total ?? state.harvests.length;
+                    state.pagination.totalPages = data.total_pages ?? data.meta?.last_page ?? Math.ceil(state.pagination.totalItems / 10);
                 }
             })
             .addCase(fetchHarvests.rejected, (state, action) => {
@@ -218,7 +200,7 @@ const harvestSlice = createSlice({
                 const data = action.payload;
                 state.farmerHarvests = Array.isArray(data)
                     ? data
-                    : data.results ?? data.harvests ?? [];
+                    : data.results ?? data.harvests ?? data.data ?? [];
             })
             .addCase(fetchFarmerHarvests.rejected, (state, action) => {
                 state.loading = false;
@@ -317,10 +299,10 @@ const harvestSlice = createSlice({
                 const data = action.payload;
                 state.adminHarvests = Array.isArray(data)
                     ? data
-                    : data.results ?? data.harvests ?? [];
+                    : data.results ?? data.harvests ?? data.data ?? [];
                 if (!Array.isArray(data)) {
-                    state.pagination.totalItems = data.count ?? data.total ?? state.adminHarvests.length;
-                    state.pagination.totalPages = data.total_pages ?? Math.ceil(state.pagination.totalItems / 10);
+                    state.pagination.totalItems = data.count ?? data.total ?? data.meta?.total ?? state.adminHarvests.length;
+                    state.pagination.totalPages = data.total_pages ?? data.meta?.last_page ?? Math.ceil(state.pagination.totalItems / 10);
                 }
             })
             .addCase(fetchAdminHarvests.rejected, (state, action) => {

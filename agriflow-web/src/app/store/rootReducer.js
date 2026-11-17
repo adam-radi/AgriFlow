@@ -3,6 +3,7 @@ import authReducer from "../../features/auth/authSlice";
 import productReducer from "../../features/products/productSlice";
 import harvestReducer from "../../features/harvests/harvestSlice";
 import orderReducer from "../../features/orders/orderSlice";
+import cartReducer from "../../features/orders/cartSlice";
 import deliveryReducer from "../../features/delivery/deliverySlice";
 import adminReducer from "../store/slices/admin/adminSlice";
 
@@ -11,6 +12,7 @@ const rootReducer = combineReducers({
    products: productReducer,
    harvests: harvestReducer,
    orders: orderReducer,
+   cart: cartReducer,
    delivery: deliveryReducer,
    admin: adminReducer,
 })

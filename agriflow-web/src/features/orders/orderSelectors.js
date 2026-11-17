@@ -1,13 +1,12 @@
-export const selectCartItems = (state) => state.orders.cartItems;
+export const selectCartItems = (state) => state.cart.items;
 
-export const selectCartCount = (state) =>
-    state.orders.cartItems.reduce((sum, item) => sum + item.packQuantity, 0);
+export const selectCartCount = (state) => state.cart.count;
 
-export const selectCartTotal = (state) =>
-    state.orders.cartItems.reduce((sum, item) => sum + (item.subtotal || 0), 0);
+export const selectCartTotal = (state) => state.cart.total;
 
-export const selectCartTotalWeight = (state) =>
-    state.orders.cartItems.reduce((sum, item) => sum + (item.totalWeight || 0), 0);
+export const selectCartLoading = (state) => state.cart.loading;
+
+export const selectCartError = (state) => state.cart.error;
 
 export const selectOrders = (state) => state.orders.orders;
 

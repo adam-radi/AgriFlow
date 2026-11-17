@@ -19,11 +19,7 @@ export default function DeliveryGroupCard({ group, linkPrefix = "/delivery/group
                     </div>
                     <div className="d-flex justify-content-between mb-1">
                         <span>Orders:</span>
-                        <span className="fw-medium">{group.orders_count ?? group.orders?.length ?? 0}</span>
-                    </div>
-                    <div className="d-flex justify-content-between">
-                        <span>Total Weight:</span>
-                        <span className="fw-medium">{group.total_weight ? `${group.total_weight} kg` : "—"}</span>
+                        <span className="fw-medium">{group.items?.length ?? 0}</span>
                     </div>
                 </div>
                 <Link to={`${linkPrefix}/${group.id}`} className="btn btn-outline-success btn-sm mt-3 w-100">

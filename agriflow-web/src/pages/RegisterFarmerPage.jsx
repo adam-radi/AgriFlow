@@ -147,7 +147,7 @@ export default function RegisterFarmerPage() {
                                             className="auth-input"
                                             type={showPassword ? "text" : "password"}
                                             name="password"
-                                            placeholder="Min. 6 characters"
+                                            placeholder="Min. 8 characters"
                                             value={formData.password}
                                             onChange={handleChange}
                                             required

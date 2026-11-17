@@ -61,7 +61,7 @@ export default function HarvestDetailsPage() {
     }
 
     const remaining = harvest
-        ? (harvest.estimated_quantity || 0) - (forecast?.reserved_quantity || 0)
+        ? (harvest.estimated_total_qte || 0) - (forecast?.reserved_quantity || 0)
         : 0;
 
     return (
@@ -97,11 +97,11 @@ export default function HarvestDetailsPage() {
                                 </div>
                                 <div>
                                     <small className="text-muted text-uppercase fw-semibold">Estimated Quantity</small>
-                                    <p className="mb-0 fw-bold fs-5 text-success">{harvest?.estimated_quantity ?? "—"}</p>
+                                    <p className="mb-0 fw-bold fs-5 text-success">{harvest?.estimated_total_qte ?? "—"}</p>
                                 </div>
                                 <div>
                                     <small className="text-muted text-uppercase fw-semibold">Daily Limit</small>
-                                    <p className="mb-0">{harvest?.max_quantity_per_day ?? "—"}</p>
+                                    <p className="mb-0">{harvest?.max_daily_qte ?? "—"}</p>
                                 </div>
                             </div>
                             <div className="mt-3 d-flex gap-2">
@@ -115,7 +115,7 @@ export default function HarvestDetailsPage() {
 
                 {/* Forecast */}
                 <Col lg={4}>
-                    <HarvestForecastCard forecast={{ ...forecast, estimated_quantity: harvest?.estimated_quantity }} />
+                    <HarvestForecastCard forecast={{ ...forecast, estimated_total_qte: harvest?.estimated_total_qte }} />
                 </Col>
 
                 {/* Capacity */}
@@ -125,7 +125,7 @@ export default function HarvestDetailsPage() {
                             <Card.Title className="h6 fw-bold mb-3">Capacity</Card.Title>
                             <div className="p-3 bg-light rounded-3 text-center mb-3">
                                 <div className="text-muted small">Estimated Quantity</div>
-                                <div className="fs-4 fw-bold">{harvest?.estimated_quantity ?? 0}</div>
+                                <div className="fs-4 fw-bold">{harvest?.estimated_total_qte ?? 0}</div>
                             </div>
                             <div className="p-3 bg-light rounded-3 text-center mb-3">
                                 <div className="text-muted small">Reserved Quantity</div>

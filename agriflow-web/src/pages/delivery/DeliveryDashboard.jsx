@@ -6,14 +6,22 @@ import { fetchDeliveryGroups } from "../../features/delivery/deliverySlice";
 import {
     selectAllDeliveryGroups,
     selectDeliveryLoading,
+    selectGroupedByZone,
+    selectDeliveryByStatus,
 } from "../../features/delivery/deliverySelectors";
 import DeliveryStatusBadge from "../../components/delivery/DeliveryStatusBadge";
 import DeliveryGroupList from "../../components/delivery/DeliveryGroupList";
+import DeliveryDashboardCard from "../../components/delivery/DeliveryDashboardCard";
+import DeliveryGroupTracker from "../../components/delivery/DeliveryGroupTracker";
 
 export default function DeliveryDashboard() {
     const dispatch = useDispatch();
     const groups = useSelector(selectAllDeliveryGroups);
     const loading = useSelector(selectDeliveryLoading);
+    const zones = useSelector(selectGroupedByZone);
+    const assignedGroups = useSelector((s) => selectDeliveryByStatus(s, "assigned"));
+    const inProgressGroups = useSelector((s) => selectDeliveryByStatus(s, "in_progress"));
+    const user = useSelector((state) => state.auth.user);
 
     const statusCounts = {
         pending: groups.filter((g) => g.status === "pending").length,
@@ -26,6 +34,14 @@ export default function DeliveryDashboard() {
     useEffect(() => {
         dispatch(fetchDeliveryGroups());
     }, [dispatch]);
+
+    const actionableGroups = [...assignedGroups, ...inProgressGroups];
+    const isLivreur = user?.role === "Livreur";
+    const myActionable = isLivreur
+        ? actionableGroups.filter(
+              (g) => g.delivery_user_id === user.id
+          )
+        : actionableGroups;
 
     return (
         <div className="container py-4">
@@ -82,11 +98,30 @@ export default function DeliveryDashboard() {
                         </Col>
                     </Row>
 
+                    {myActionable.length > 0 && (
+                        <>
+                            <h5 className="fw-bold mb-3">🚚 Active Deliveries</h5>
+                            <Row className="g-3 mb-4">
+                                {myActionable.map((g) => (
+                                    <Col xs={12} md={6} lg={4} key={g.id}>
+                                        <DeliveryGroupTracker group={g} loading={loading} />
+                                    </Col>
+                                ))}
+                            </Row>
+                        </>
+                    )}
+
+                    <h5 className="fw-bold mb-3">📍 Zones Overview</h5>
+                    <Row className="g-3 mb-4">
+                        {Object.entries(zones).map(([zone, zGroups]) => (
+                            <Col xs={6} md={4} lg={3} key={zone}>
+                                <DeliveryDashboardCard group={{ ...zGroups[0], zone, orders_count: zGroups.length }} linkPrefix="/delivery/groups" />
+                            </Col>
+                        ))}
+                    </Row>
+
                     <h5 className="fw-bold mb-3">Recent Groups</h5>
-                    <DeliveryGroupList
-                        groups={groups.slice(0, 8)}
-                        linkPrefix="/delivery/groups"
-                    />
+                    <DeliveryGroupList groups={groups.slice(0, 8)} linkPrefix="/delivery/groups" />
                 </>
             )}
         </div>

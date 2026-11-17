@@ -1,12 +1,12 @@
+import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { Button, Alert } from "react-bootstrap";
-import { removeFromCart, updatePackQuantity, clearCart } from "../../../features/orders/orderSlice";
+import { fetchCart, removeFromCart, updateCartItem, clearCart } from "../../../features/orders/cartSlice";
 import {
     selectCartItems,
     selectCartCount,
     selectCartTotal,
-    selectCartTotalWeight,
 } from "../../../features/orders/orderSelectors";
 import CartItem from "../../../components/orders/CartItem";
 import CartSummary from "../../../components/orders/CartSummary";
@@ -17,14 +17,17 @@ export default function CartPage() {
     const cartItems = useSelector(selectCartItems);
     const cartCount = useSelector(selectCartCount);
     const cartTotal = useSelector(selectCartTotal);
-    const cartTotalWeight = useSelector(selectCartTotalWeight);
 
-    function handleUpdate(productId, harvestId, packQuantity) {
-        dispatch(updatePackQuantity({ productId, harvestId, packQuantity }));
+    useEffect(() => {
+        dispatch(fetchCart());
+    }, [dispatch]);
+
+    function handleUpdate(itemId, quantity) {
+        dispatch(updateCartItem({ itemId, quantity }));
     }
 
-    function handleRemove(productId, harvestId) {
-        dispatch(removeFromCart({ productId, harvestId }));
+    function handleRemove(itemId) {
+        dispatch(removeFromCart(itemId));
     }
 
     return (
@@ -55,23 +58,17 @@ export default function CartPage() {
                     <div className="col-lg-8">
                         {cartItems.map((item) => (
                             <CartItem
-                                key={`${item.productId}-${item.harvestId}`}
+                                key={item.id}
                                 item={item}
                                 onUpdate={handleUpdate}
                                 onRemove={handleRemove}
                             />
                         ))}
-                        {cartItems.some((i) => i.harvestDate) && (
-                            <Alert variant="info" className="mt-3 mb-0">
-                                <small>🚚 Estimated delivery dates will be confirmed at checkout based on harvest schedules.</small>
-                            </Alert>
-                        )}
                     </div>
                     <div className="col-lg-4">
                         <CartSummary
                             cartItems={cartItems}
                             cartTotal={cartTotal}
-                            cartTotalWeight={cartTotalWeight}
                             cartCount={cartCount}
                         />
                         <Button

@@ -3,10 +3,8 @@ import { Table, Badge, Spinner } from "react-bootstrap";
 const STATUS_COLORS = {
     pending: "warning",
     confirmed: "info",
-    processing: "primary",
-    shipped: "secondary",
-    delivered: "success",
     cancelled: "danger",
+    delivered: "success",
 };
 
 export default function AdminOrderOverviewTable({ orders = [], loading }) {
@@ -34,8 +32,8 @@ export default function AdminOrderOverviewTable({ orders = [], loading }) {
                     orders.map((order) => (
                         <tr key={order.id}>
                             <td className="fw-medium">#{order.id}</td>
-                            <td>{order.customer_name || order.customer?.name || "—"}</td>
-                            <td>{order.items_count ?? order.items?.length ?? 0}</td>
+                            <td>{order.customer?.name || "—"}</td>
+                            <td>{order.items?.length ?? 0}</td>
                             <td>{order.total_amount ? `${Number(order.total_amount).toFixed(2)} MAD` : "—"}</td>
                             <td>
                                 <Badge bg={STATUS_COLORS[order.status] || "secondary"}>

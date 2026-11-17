@@ -11,47 +11,7 @@ import {
 } from "../../features/products/productSelectors";
 
 /* ─── helpers ──────────────────────────────────────────────────────────────── */
-const PLACEHOLDER_IMG = "https://images.unsplash.com/photo-1542838132-92c53300491e?w=400&q=80";
-
-function ProductCard({ product }) {
-    return (
-        <Link
-            to={`/products/${product.id}`}
-            className="agri-card"
-            style={{ textDecoration: "none" }}
-            id={`product-card-${product.id}`}
-        >
-            <div className="agri-card-img-wrap">
-                <img
-                    src={product.image || PLACEHOLDER_IMG}
-                    alt={product.name}
-                    className="agri-card-img"
-                    onError={(e) => { e.target.src = PLACEHOLDER_IMG; }}
-                />
-                {product.is_available === false && (
-                    <span className="agri-badge agri-badge-out">Out of stock</span>
-                )}
-                {product.is_available !== false && (
-                    <span className="agri-badge agri-badge-in">Available</span>
-                )}
-            </div>
-            <div className="agri-card-body">
-                <h3 className="agri-card-title">{product.name}</h3>
-                <p className="agri-card-desc">{product.description}</p>
-                <div className="agri-card-footer">
-                    <span className="agri-price">
-                        {product.price != null
-                            ? `${parseFloat(product.price).toFixed(2)} MAD`
-                            : "—"}
-                    </span>
-                    <span className="agri-card-farmer">
-                        🌾 {product.farmer_name || product.farmer || "Farmer"}
-                    </span>
-                </div>
-            </div>
-        </Link>
-    );
-}
+import ProductCard from "../../components/products/ProductCard";
 
 function SkeletonCard() {
     return (

@@ -1,12 +1,16 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { adminAPI } from "./adminApi";
 
+function unwrap(res) {
+    return res.data?.data ?? res.data;
+}
+
 export const fetchUsers = createAsyncThunk(
     "admin/fetchUsers",
     async (params = {}, { rejectWithValue }) => {
         try {
             const res = await adminAPI.getUsers(params);
-            return res.data;
+            return unwrap(res);
         } catch (err) {
             return rejectWithValue(err.response?.data || "Failed to load users");
         }
@@ -18,7 +22,7 @@ export const fetchFarmers = createAsyncThunk(
     async (params = {}, { rejectWithValue }) => {
         try {
             const res = await adminAPI.getFarmers(params);
-            return res.data;
+            return unwrap(res);
         } catch (err) {
             return rejectWithValue(err.response?.data || "Failed to load farmers");
         }
@@ -30,7 +34,7 @@ export const fetchProducts = createAsyncThunk(
     async (params = {}, { rejectWithValue }) => {
         try {
             const res = await adminAPI.getProducts(params);
-            return res.data;
+            return unwrap(res);
         } catch (err) {
             return rejectWithValue(err.response?.data || "Failed to load products");
         }
@@ -42,7 +46,7 @@ export const fetchOrders = createAsyncThunk(
     async (params = {}, { rejectWithValue }) => {
         try {
             const res = await adminAPI.getOrders(params);
-            return res.data;
+            return unwrap(res);
         } catch (err) {
             return rejectWithValue(err.response?.data || "Failed to load orders");
         }
@@ -54,7 +58,7 @@ export const fetchHarvests = createAsyncThunk(
     async (params = {}, { rejectWithValue }) => {
         try {
             const res = await adminAPI.getHarvests(params);
-            return res.data;
+            return unwrap(res);
         } catch (err) {
             return rejectWithValue(err.response?.data || "Failed to load harvests");
         }
@@ -66,7 +70,7 @@ export const fetchStats = createAsyncThunk(
     async (params = {}, { rejectWithValue }) => {
         try {
             const res = await adminAPI.getStats(params);
-            return res.data;
+            return unwrap(res);
         } catch (err) {
             return rejectWithValue(err.response?.data || "Failed to load stats");
         }
@@ -78,7 +82,7 @@ export const validateFarmer = createAsyncThunk(
     async (id, { rejectWithValue }) => {
         try {
             const res = await adminAPI.validateFarmer(id);
-            return res.data;
+            return unwrap(res);
         } catch (err) {
             return rejectWithValue(err.response?.data || "Failed to validate farmer");
         }
@@ -90,7 +94,7 @@ export const rejectFarmer = createAsyncThunk(
     async (id, { rejectWithValue }) => {
         try {
             const res = await adminAPI.rejectFarmer(id);
-            return res.data;
+            return unwrap(res);
         } catch (err) {
             return rejectWithValue(err.response?.data || "Failed to reject farmer");
         }
@@ -102,7 +106,7 @@ export const suspendUser = createAsyncThunk(
     async (id, { rejectWithValue }) => {
         try {
             const res = await adminAPI.suspendUser(id);
-            return res.data;
+            return { id, data: unwrap(res) };
         } catch (err) {
             return rejectWithValue(err.response?.data || "Failed to suspend user");
         }
@@ -114,9 +118,69 @@ export const disableProduct = createAsyncThunk(
     async (id, { rejectWithValue }) => {
         try {
             const res = await adminAPI.disableProduct(id);
-            return res.data;
+            return unwrap(res);
         } catch (err) {
             return rejectWithValue(err.response?.data || "Failed to disable product");
+        }
+    }
+);
+
+export const enableProduct = createAsyncThunk(
+    "admin/enableProduct",
+    async (id, { rejectWithValue }) => {
+        try {
+            const res = await adminAPI.enableProduct(id);
+            return unwrap(res);
+        } catch (err) {
+            return rejectWithValue(err.response?.data || "Failed to enable product");
+        }
+    }
+);
+
+export const updateProduct = createAsyncThunk(
+    "admin/updateProduct",
+    async ({ id, data }, { rejectWithValue }) => {
+        try {
+            const res = await adminAPI.updateProduct(id, data);
+            return unwrap(res);
+        } catch (err) {
+            return rejectWithValue(err.response?.data || "Failed to update product");
+        }
+    }
+);
+
+export const deleteProduct = createAsyncThunk(
+    "admin/deleteProduct",
+    async (id, { rejectWithValue }) => {
+        try {
+            await adminAPI.deleteProduct(id);
+            return id;
+        } catch (err) {
+            return rejectWithValue(err.response?.data || "Failed to delete product");
+        }
+    }
+);
+
+export const updateOrderStatus = createAsyncThunk(
+    "admin/updateOrderStatus",
+    async ({ id, status }, { rejectWithValue }) => {
+        try {
+            const res = await adminAPI.updateOrderStatus(id, status);
+            return res.data?.data ?? res.data;
+        } catch (err) {
+            return rejectWithValue(err.response?.data || "Failed to update order");
+        }
+    }
+);
+
+export const createDeliveryUser = createAsyncThunk(
+    "admin/createDeliveryUser",
+    async (data, { rejectWithValue }) => {
+        try {
+            const res = await adminAPI.createDeliveryUser(data);
+            return unwrap(res);
+        } catch (err) {
+            return rejectWithValue(err.response?.data || "Failed to create delivery user");
         }
     }
 );
@@ -154,7 +218,7 @@ const adminSlice = createSlice({
             .addCase(fetchUsers.pending, setPending)
             .addCase(fetchUsers.fulfilled, (state, action) => {
                 state.loading = false;
-                state.users = Array.isArray(action.payload) ? action.payload : action.payload.results ?? action.payload.users ?? [];
+                state.users = Array.isArray(action.payload) ? action.payload : action.payload.data ?? action.payload.results ?? action.payload.users ?? [];
             })
             .addCase(fetchUsers.rejected, setRejected);
 
@@ -162,7 +226,7 @@ const adminSlice = createSlice({
             .addCase(fetchFarmers.pending, setPending)
             .addCase(fetchFarmers.fulfilled, (state, action) => {
                 state.loading = false;
-                state.farmers = Array.isArray(action.payload) ? action.payload : action.payload.results ?? action.payload.farmers ?? [];
+                state.farmers = Array.isArray(action.payload) ? action.payload : action.payload.data ?? action.payload.results ?? action.payload.farmers ?? [];
             })
             .addCase(fetchFarmers.rejected, setRejected);
 
@@ -170,7 +234,7 @@ const adminSlice = createSlice({
             .addCase(fetchProducts.pending, setPending)
             .addCase(fetchProducts.fulfilled, (state, action) => {
                 state.loading = false;
-                state.products = Array.isArray(action.payload) ? action.payload : action.payload.results ?? action.payload.products ?? [];
+                state.products = Array.isArray(action.payload) ? action.payload : action.payload.data ?? action.payload.results ?? action.payload.products ?? [];
             })
             .addCase(fetchProducts.rejected, setRejected);
 
@@ -178,7 +242,7 @@ const adminSlice = createSlice({
             .addCase(fetchOrders.pending, setPending)
             .addCase(fetchOrders.fulfilled, (state, action) => {
                 state.loading = false;
-                state.orders = Array.isArray(action.payload) ? action.payload : action.payload.results ?? action.payload.orders ?? [];
+                state.orders = Array.isArray(action.payload) ? action.payload : action.payload.data ?? action.payload.results ?? action.payload.orders ?? [];
             })
             .addCase(fetchOrders.rejected, setRejected);
 
@@ -186,7 +250,7 @@ const adminSlice = createSlice({
             .addCase(fetchHarvests.pending, setPending)
             .addCase(fetchHarvests.fulfilled, (state, action) => {
                 state.loading = false;
-                state.harvests = Array.isArray(action.payload) ? action.payload : action.payload.results ?? action.payload.harvests ?? [];
+                state.harvests = Array.isArray(action.payload) ? action.payload : action.payload.data ?? action.payload.results ?? action.payload.harvests ?? [];
             })
             .addCase(fetchHarvests.rejected, setRejected);
 
@@ -214,9 +278,7 @@ const adminSlice = createSlice({
 
         builder
             .addCase(suspendUser.fulfilled, (state, action) => {
-                const updated = action.payload;
-                const idx = state.users.findIndex((u) => u.id === updated.id);
-                if (idx !== -1) state.users[idx] = updated;
+                state.users = state.users.filter((u) => u.id !== action.payload?.id);
             });
 
         builder
@@ -224,6 +286,37 @@ const adminSlice = createSlice({
                 const updated = action.payload;
                 const idx = state.products.findIndex((p) => p.id === updated.id);
                 if (idx !== -1) state.products[idx] = updated;
+            });
+
+        builder
+            .addCase(enableProduct.fulfilled, (state, action) => {
+                const updated = action.payload;
+                const idx = state.products.findIndex((p) => p.id === updated.id);
+                if (idx !== -1) state.products[idx] = updated;
+            });
+
+        builder
+            .addCase(updateProduct.fulfilled, (state, action) => {
+                const updated = action.payload;
+                const idx = state.products.findIndex((p) => p.id === updated.id);
+                if (idx !== -1) state.products[idx] = updated;
+            });
+
+        builder
+            .addCase(deleteProduct.fulfilled, (state, action) => {
+                state.products = state.products.filter((p) => p.id !== action.payload);
+            });
+
+        builder
+            .addCase(updateOrderStatus.fulfilled, (state, action) => {
+                const updated = action.payload;
+                const idx = state.orders.findIndex((o) => o.id === updated.id);
+                if (idx !== -1) state.orders[idx] = updated;
+            });
+
+        builder
+            .addCase(createDeliveryUser.fulfilled, (state) => {
+                state.loading = false;
             });
     },
 });

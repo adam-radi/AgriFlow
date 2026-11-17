@@ -6,7 +6,6 @@ import { registerClient } from "../features/auth/authThunks";
 import {
     selectAuthLoading,
     selectAuthError,
-    selectIsAuthenticated,
 } from "../features/auth/authSelectors";
 import "../assets/auth.css";
 
@@ -25,7 +24,6 @@ export default function RegisterClientPage() {
     const navigate = useNavigate();
     const loading = useSelector(selectAuthLoading);
     const error = useSelector(selectAuthError);
-    const isAuthenticated = useSelector(selectIsAuthenticated);
 
     const handleChange = (e) => {
         setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -39,7 +37,7 @@ export default function RegisterClientPage() {
             return;
         }
         dispatch(registerClient(formData)).unwrap()
-            .then(() => navigate("/dashboard/client"))
+            .then(() => navigate("/products"))
             .catch(() => {});
     };
 
@@ -119,7 +117,7 @@ export default function RegisterClientPage() {
                                     className="auth-input"
                                     type={showPassword ? "text" : "password"}
                                     name="password"
-                                    placeholder="Min. 6 characters"
+                                    placeholder="Min. 8 characters"
                                     value={formData.password}
                                     onChange={handleChange}
                                     required

@@ -7,11 +7,6 @@ import {
     selectProductsError,
 } from "../../../features/products/productSelectors";
 
-const CATEGORIES = [
-    "Vegetables", "Fruits", "Grains", "Dairy", "Poultry",
-    "Herbs & Spices", "Legumes", "Nuts & Seeds", "Other",
-];
-
 export default function CreateProductPage() {
     const dispatch = useDispatch();
     const navigate = useNavigate();
@@ -21,13 +16,12 @@ export default function CreateProductPage() {
     const [form, setForm] = useState({
         name: "",
         description: "",
-        price: "",
         category: "",
-        standard_quantity: "",
         harvest_date: "",
         harvest_link: "",
         is_available: true,
     });
+    const [quantities, setQuantities] = useState([{ label: "", price: "" }]);
     const [imageFile, setImageFile] = useState(null);
     const [previewUrl, setPreviewUrl] = useState(null);
 
@@ -37,6 +31,23 @@ export default function CreateProductPage() {
             ...prev,
             [name]: type === "checkbox" ? checked : value,
         }));
+    }
+
+    function handleQtyChange(index, field, value) {
+        setQuantities((prev) => {
+            const next = [...prev];
+            next[index] = { ...next[index], [field]: value };
+            return next;
+        });
+    }
+
+    function addQtyRow() {
+        setQuantities((prev) => [...prev, { label: "", price: "" }]);
+    }
+
+    function removeQtyRow(index) {
+        if (quantities.length <= 1) return;
+        setQuantities((prev) => prev.filter((_, i) => i !== index));
     }
 
     function handleImageChange(e) {
@@ -54,6 +65,12 @@ export default function CreateProductPage() {
         Object.entries(form).forEach(([key, val]) => {
             if (val !== "" && val !== null) formData.append(key, val);
         });
+        quantities.forEach((qty, i) => {
+            if (qty.label && qty.price !== "") {
+                formData.append(`quantities[${i}][label]`, qty.label);
+                formData.append(`quantities[${i}][price]`, qty.price);
+            }
+        });
         if (imageFile) formData.append("image", imageFile);
 
         const result = await dispatch(createProduct(formData));
@@ -67,7 +84,6 @@ export default function CreateProductPage() {
             <style>{formStyles}</style>
             <div className="pf-page">
                 <div className="pf-container">
-                    {/* Header */}
                     <div className="pf-header">
                         <button className="pf-back" onClick={() => navigate(-1)} id="create-back-btn">← Back</button>
                         <div>
@@ -76,7 +92,6 @@ export default function CreateProductPage() {
                         </div>
                     </div>
 
-                    {/* Error */}
                     {error && (
                         <div className="pf-error" id="create-error-msg">
                             ⚠️ {typeof error === "string" ? error : JSON.stringify(error)}
@@ -85,7 +100,6 @@ export default function CreateProductPage() {
 
                     <form onSubmit={handleSubmit} className="pf-form" id="create-product-form">
                         <div className="pf-two-col">
-                            {/* Left: form fields */}
                             <div className="pf-fields">
                                 <div className="pf-group">
                                     <label className="pf-label" htmlFor="cp-name">Product Name *</label>
@@ -103,12 +117,6 @@ export default function CreateProductPage() {
 
                                 <div className="pf-row">
                                     <div className="pf-group">
-                                        <label className="pf-label" htmlFor="cp-price">Price (MAD) *</label>
-                                        <input id="cp-price" name="price" type="number" min="0" step="0.01"
-                                            className="pf-input" required placeholder="0.00"
-                                            value={form.price} onChange={handleChange} />
-                                    </div>
-                                    <div className="pf-group">
                                         <label className="pf-label" htmlFor="cp-category">Category</label>
                                         <select id="cp-category" name="category" className="pf-input pf-select"
                                             value={form.category} onChange={handleChange}>
@@ -118,20 +126,41 @@ export default function CreateProductPage() {
                                             ))}
                                         </select>
                                     </div>
-                                </div>
-
-                                <div className="pf-row">
-                                    <div className="pf-group">
-                                        <label className="pf-label" htmlFor="cp-quantity">Standard Quantity</label>
-                                        <input id="cp-quantity" name="standard_quantity" className="pf-input"
-                                            placeholder="e.g. 1 kg, 1 box"
-                                            value={form.standard_quantity} onChange={handleChange} />
-                                    </div>
                                     <div className="pf-group">
                                         <label className="pf-label" htmlFor="cp-harvest-date">Harvest Date</label>
                                         <input id="cp-harvest-date" name="harvest_date" type="date"
                                             className="pf-input" value={form.harvest_date} onChange={handleChange} />
                                     </div>
+                                </div>
+
+                                <div className="pf-group">
+                                    <label className="pf-label">Sizes / Quantities *</label>
+                                    <div className="pf-quantities-list">
+                                        {quantities.map((qty, i) => (
+                                            <div key={i} className="pf-qty-row">
+                                                <input
+                                                    className="pf-input pf-qty-label"
+                                                    placeholder="e.g. 1kg, 250ml"
+                                                    value={qty.label}
+                                                    onChange={(e) => handleQtyChange(i, "label", e.target.value)}
+                                                />
+                                                <input
+                                                    className="pf-input pf-qty-price"
+                                                    type="number" min="0" step="0.01"
+                                                    placeholder="Price"
+                                                    value={qty.price}
+                                                    onChange={(e) => handleQtyChange(i, "price", e.target.value)}
+                                                />
+                                                {quantities.length > 1 && (
+                                                    <button type="button" className="pf-qty-remove"
+                                                        onClick={() => removeQtyRow(i)}>✕</button>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <button type="button" className="pf-qty-add" onClick={addQtyRow}>
+                                        + Add size
+                                    </button>
                                 </div>
 
                                 <div className="pf-group">
@@ -148,7 +177,6 @@ export default function CreateProductPage() {
                                 </label>
                             </div>
 
-                            {/* Right: image upload */}
                             <div className="pf-image-col">
                                 <label className="pf-label">Product Image</label>
                                 <label htmlFor="cp-image" className="pf-dropzone" id="image-drop-zone">
@@ -189,6 +217,11 @@ export default function CreateProductPage() {
         </>
     );
 }
+
+const CATEGORIES = [
+    "Vegetables", "Fruits", "Grains", "Dairy", "Poultry",
+    "Herbs & Spices", "Legumes", "Nuts & Seeds", "Other",
+];
 
 const formStyles = `
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
@@ -240,13 +273,30 @@ const formStyles = `
 .pf-select { cursor:pointer; }
 .pf-select option { background:#0d2b1a; color:#f1f5f9; }
 
+.pf-quantities-list { display:flex; flex-direction:column; gap:.5rem; margin-bottom:.5rem; }
+.pf-qty-row { display:flex; gap:.5rem; align-items:center; }
+.pf-qty-label { flex:1; }
+.pf-qty-price { width:110px; }
+.pf-qty-remove {
+    background:rgba(239,68,68,.15); border:1px solid rgba(239,68,68,.3);
+    color:#f87171; width:32px; height:32px; border-radius:8px; cursor:pointer;
+    font-size:.85rem; display:flex; align-items:center; justify-content:center;
+    transition:background .18s; flex-shrink:0;
+}
+.pf-qty-remove:hover { background:rgba(239,68,68,.3); }
+.pf-qty-add {
+    background:none; border:1.5px dashed rgba(255,255,255,.15); color:#94a3b8;
+    border-radius:10px; padding:.5rem 1rem; font-size:.82rem; cursor:pointer;
+    font-family:inherit; transition:all .18s; width:fit-content;
+}
+.pf-qty-add:hover { border-color:#4ade80; color:#4ade80; background:rgba(74,222,128,.05); }
+
 .pf-checkbox-row {
     display:flex; align-items:center; gap:.7rem;
     cursor:pointer; font-size:.9rem; color:#94a3b8; font-weight:500;
 }
 .pf-checkbox { accent-color:#22c55e; width:16px; height:16px; cursor:pointer; }
 
-/* ── Image upload ── */
 .pf-image-col { display:flex; flex-direction:column; gap:.6rem; }
 .pf-dropzone {
     border:2px dashed rgba(255,255,255,.15); border-radius:16px;
@@ -267,7 +317,6 @@ const formStyles = `
 }
 .pf-remove-img:hover { background:rgba(239,68,68,.1); }
 
-/* ── Submit row ── */
 .pf-submit-row {
     display:flex; justify-content:flex-end; gap:1rem;
     margin-top:2rem; padding-top:1.5rem;

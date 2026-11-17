@@ -1,18 +1,5 @@
 import axios from 'axios';
 
-// ─── WHY NO TOP-LEVEL STORE/AUTHSLICE IMPORT ─────────────────────────────────
-//
-//  axiosClient  ←─── authThunks  ←─── authSlice  ←─── rootReducer  ←─── store
-//      │                                                                      │
-//      └──────────────────────── store import ───────────────────────────────►│
-//
-//  Importing the store at the top level creates this cycle and causes:
-//  "Cannot access 'loginUser' before initialization"
-//
-//  Fix: call injectStore() from store.js AFTER the store is created,
-//  so the reference is available when interceptors actually run.
-//
-// ─────────────────────────────────────────────────────────────────────────────
 
 let _store;
 
@@ -22,8 +9,8 @@ export function injectStore(store) {
 }
 
 const axiosClient = axios.create({
-    baseURL: import.meta.env.VITE_API_URL,
-    headers: {
+    baseURL : import.meta.env.VITE_API_URL,
+    headers : {
         'Content-Type': 'application/json',
         accept: 'application/json',
     },

@@ -9,9 +9,9 @@ export const authAPI={
         return axiosClient.post(ENDPOINTS.AUTH.REGISTER , data);
     },
     logout: () => {
-        return axiosClient.post(ENDPOINTS.AUTH.LOGOUT);
+        return axiosClient.get(ENDPOINTS.AUTH.LOGOUT);
     },
     me: () => {
-        return axiosClient.get(ENDPOINTS.AUTH.PROFILE);
+        return axiosClient.get(ENDPOINTS.AUTH.ME);
     }
 }

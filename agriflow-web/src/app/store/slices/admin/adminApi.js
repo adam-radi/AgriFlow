@@ -27,8 +27,26 @@ export const adminAPI = {
         axiosClient.post(ADMIN_ENDPOINTS.rejectFarmer(id)),
 
     suspendUser: (id) =>
-        axiosClient.post(ADMIN_ENDPOINTS.suspendUser(id)),
+        axiosClient.delete(ADMIN_ENDPOINTS.suspendUser(id)),
 
     disableProduct: (id) =>
         axiosClient.post(ADMIN_ENDPOINTS.disableProduct(id)),
+
+    enableProduct: (id) =>
+        axiosClient.post(ADMIN_ENDPOINTS.enableProduct(id)),
+
+    updateProduct: (id, formData) =>
+        axiosClient.post(ADMIN_ENDPOINTS.updateProduct(id), formData, {
+            headers: { "Content-Type": "multipart/form-data" },
+            params: { _method: "PUT" },
+        }),
+
+    deleteProduct: (id) =>
+        axiosClient.delete(ADMIN_ENDPOINTS.deleteProduct(id)),
+
+    updateOrderStatus: (id, status) =>
+        axiosClient.post(ADMIN_ENDPOINTS.updateOrderStatus(id, status)),
+
+    createDeliveryUser: (data) =>
+        axiosClient.post(ADMIN_ENDPOINTS.createDeliveryUser, data),
 };

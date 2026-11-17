@@ -6,17 +6,17 @@ import ENDPOINTS from "../../api/endpoints";
 
 export const productAPI = {
 
-    /** GET /products  — public catalog (supports ?page= &search= &category=) */
+    /** GET /public/products  — public catalog (supports ?page=) */
     getAll: (params = {}) =>
-        axiosClient.get(ENDPOINTS.PRODUCTS, { params }),
+        axiosClient.get(ENDPOINTS.PUBLIC_PRODUCTS, { params }),
 
-    /** GET /products/:id  — single product detail */
+    /** GET /public/products/:id  — public product detail */
     getById: (id) =>
-        axiosClient.get(`${ENDPOINTS.PRODUCTS}/${id}`),
+        axiosClient.get(ENDPOINTS.PUBLIC_PRODUCT_DETAILS(id)),
 
-    /** GET /products?farmer_id=me  — authenticated farmer's own products */
+    /** GET /products  — authenticated farmer's own products (backend filters by auth) */
     getFarmerProducts: () =>
-        axiosClient.get(`${ENDPOINTS.PRODUCTS}/farmer/my-products`),
+        axiosClient.get(ENDPOINTS.PRODUCTS),
 
     /** POST /products  — create (Farmer only, multipart/form-data for image) */
     create: (formData) =>
@@ -24,11 +24,13 @@ export const productAPI = {
             headers: { "Content-Type": "multipart/form-data" },
         }),
 
-    /** PUT /products/:id  — update (Farmer only) */
-    update: (id, formData) =>
-        axiosClient.put(`${ENDPOINTS.PRODUCTS}/${id}`, formData, {
+    /** POST /products/:id  — update via _method=PUT (Farmer only) */
+    update: (id, formData) => {
+        formData.append("_method", "PUT");
+        return axiosClient.post(`${ENDPOINTS.PRODUCTS}/${id}`, formData, {
             headers: { "Content-Type": "multipart/form-data" },
-        }),
+        });
+    },
 
     /** DELETE /products/:id  — delete (Farmer only) */
     delete: (id) =>

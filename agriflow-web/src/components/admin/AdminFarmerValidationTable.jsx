@@ -24,26 +24,26 @@ export default function AdminFarmerValidationTable({ farmers = [], loading, onVa
                     farmers.map((farmer) => (
                         <tr key={farmer.id}>
                             <td className="fw-medium">#{farmer.id}</td>
-                            <td>{farmer.name || `${farmer.first_name ?? ""} ${farmer.last_name ?? ""}`.trim() || "—"}</td>
+                            <td>{farmer.name || "—"}</td>
                             <td>{farmer.email}</td>
                             <td>
                                 <Badge bg={
-                                    farmer.status === "validated" ? "success" :
-                                    farmer.status === "rejected" ? "danger" :
-                                    farmer.status === "pending" ? "warning" :
+                                    farmer.farmer_status === "approved" ? "success" :
+                                    farmer.farmer_status === "rejected" ? "danger" :
+                                    farmer.farmer_status === "pending" ? "warning" :
                                     "secondary"
                                 }>
-                                    {farmer.status || "unknown"}
+                                    {farmer.farmer_status || "unknown"}
                                 </Badge>
                             </td>
                             <td>
                                 <div className="d-flex gap-1">
-                                    {farmer.status !== "validated" && (
+                                    {farmer.farmer_status !== "approved" && (
                                         <Button variant="success" size="sm" onClick={() => onValidate?.(farmer.id)}>
                                             Validate
                                         </Button>
                                     )}
-                                    {farmer.status !== "rejected" && (
+                                    {farmer.farmer_status !== "rejected" && (
                                         <Button variant="danger" size="sm" onClick={() => onReject?.(farmer.id)}>
                                             Reject
                                         </Button>

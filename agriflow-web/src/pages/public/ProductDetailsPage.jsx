@@ -1,13 +1,14 @@
 import { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
+import { Alert } from "react-bootstrap";
 import { fetchProductById, clearSelectedProduct } from "../../features/products/productSlice";
 import {
     selectSelectedProduct,
     selectProductsLoading,
     selectProductsError,
 } from "../../features/products/productSelectors";
-import { addToCart } from "../../features/orders/orderSlice";
+import { addToCart } from "../../features/orders/cartSlice";
 
 const PLACEHOLDER_IMG = "https://images.unsplash.com/photo-1542838132-92c53300491e?w=800&q=80";
 
@@ -31,11 +32,19 @@ export default function ProductDetailsPage() {
     const product = useSelector(selectSelectedProduct);
     const loading = useSelector(selectProductsLoading);
     const error = useSelector(selectProductsError);
+    const [packQty, setPackQty] = useState(1);
+    const [selectedQtyId, setSelectedQtyId] = useState(null);
 
     useEffect(() => {
         dispatch(fetchProductById(id));
         return () => dispatch(clearSelectedProduct());
     }, [dispatch, id]);
+
+    useEffect(() => {
+        if (product?.quantities?.length && !selectedQtyId) {
+            setSelectedQtyId(product.quantities[0].id);
+        }
+    }, [product, selectedQtyId]);
 
     if (loading) return (
         <>
@@ -71,23 +80,16 @@ export default function ProductDetailsPage() {
     );
 
     const isAvailable = product.is_available !== false;
-    const price = product.price != null ? `${parseFloat(product.price).toFixed(2)} MAD` : "Contact farmer";
-    const stdQty = parseFloat(product.standard_quantity) || 1;
-    const [packQty, setPackQty] = useState(1);
-    const totalWeight = (stdQty * packQty).toFixed(2);
+    const selectedQty = product.quantities?.find((q) => q.id === selectedQtyId) || product.quantities?.[0] || null;
+    const price = selectedQty ? `${parseFloat(selectedQty.price).toFixed(2)} MAD/pack` : "Contact farmer";
+    const firstHarvest = product.harvests?.[0] || null;
 
     function handleAddToCart() {
+        if (!selectedQty || !firstHarvest) return;
         dispatch(addToCart({
-            productId: product.id,
-            productName: product.name,
-            standardQuantity: stdQty,
-            packQuantity: packQty,
-            totalWeight: parseFloat(totalWeight),
-            unitPrice: parseFloat(product.price) || 0,
-            subtotal: (parseFloat(product.price) || 0) * parseFloat(totalWeight),
-            harvestId: product.harvest_id || null,
-            harvestDate: product.harvest_date || null,
-            estimatedDeliveryDate: product.estimated_delivery_date || null,
+            harvest_id: firstHarvest.id,
+            quantity_standard_id: selectedQty.id,
+            quantity: packQty,
         }));
     }
 
@@ -138,56 +140,44 @@ export default function ProductDetailsPage() {
                         <p className="pd-description">{product.description || "No description provided."}</p>
 
                         <div className="pd-details-grid">
-                            <DetailRow icon="🌾" label="Farmer" value={product.farmer_name || product.farmer} />
-                            <DetailRow icon="📦" label="Standard Quantity" value={product.standard_quantity} />
-                            <DetailRow icon="🗓️" label="Harvest Date" value={product.harvest_date} />
-                            <DetailRow icon="📍" label="Location" value={product.location} />
+                            <DetailRow icon="🌾" label="Farmer" value={product.farmer?.name} />
+                            <DetailRow icon="📍" label="Location" value={product.farmer?.location} />
                         </div>
 
                         {/* ── Upcoming Harvest Section ── */}
-                        <div className="pd-harvest-section">
-                            <h3 className="pd-harvest-section-title">🌿 Upcoming Harvest</h3>
-                            <div className="pd-harvest-grid">
-                                <div className="pd-harvest-item">
-                                    <span className="pd-harvest-label">Next Date</span>
-                                    <span className="pd-harvest-value">{product.next_harvest_date || product.harvest_date || "TBD"}</span>
-                                </div>
-                                <div className="pd-harvest-item">
-                                    <span className="pd-harvest-label">Status</span>
-                                    <span className={`pd-harvest-value${product.is_available === false ? " text-danger" : " text-success"}`}>
-                                        {product.is_available === false ? "Unavailable" : "Available"}
-                                    </span>
-                                </div>
-                                <div className="pd-harvest-item">
-                                    <span className="pd-harvest-label">Est. Stock</span>
-                                    <span className="pd-harvest-value">{(product.estimated_stock ?? product.standard_quantity) || "—"}</span>
-                                </div>
-                                <div className="pd-harvest-item">
-                                    <span className="pd-harvest-label">Remaining</span>
-                                    <span className="pd-harvest-value">{product.remaining_capacity ?? "—"}</span>
+                        {product.harvests?.length > 0 && (
+                            <div className="pd-harvest-section">
+                                <h3 className="pd-harvest-section-title">🌿 Available Harvests</h3>
+                                <div className="pd-harvest-grid">
+                                    {product.harvests.slice(0, 3).map((h) => (
+                                        <div key={h.id} className="pd-harvest-item">
+                                            <span className="pd-harvest-label">{h.start_date || "TBD"}</span>
+                                            <span className="pd-harvest-value text-success">
+                                                {h.estimated_total_qte ? `${h.estimated_total_qte} kg` : "Available"}
+                                            </span>
+                                        </div>
+                                    ))}
                                 </div>
                             </div>
-                        </div>
-
-                        {/* Harvest link */}
-                        {product.harvest_link && (
-                            <a
-                                href={product.harvest_link}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="pd-harvest-link"
-                                id="product-harvest-link"
-                            >
-                                🌿 View Harvest Details ↗
-                            </a>
                         )}
 
                         {/* ── Add to Cart Section ── */}
-                        {isAvailable && (
+                        {isAvailable && product.quantities?.length > 0 && firstHarvest && (
                             <div className="pd-cart-section">
                                 <div className="pd-cart-row">
-                                    <span className="pd-cart-label">Standard Qty:</span>
-                                    <span className="pd-cart-value">{stdQty} kg</span>
+                                    <span className="pd-cart-label">Pack Type:</span>
+                                    <select
+                                        className="form-select form-select-sm"
+                                        style={{ width: "auto", minWidth: "120px" }}
+                                        value={selectedQtyId || ""}
+                                        onChange={(e) => setSelectedQtyId(Number(e.target.value))}
+                                    >
+                                        {product.quantities.map((q) => (
+                                            <option key={q.id} value={q.id}>
+                                                {q.label} — {parseFloat(q.price).toFixed(2)} MAD
+                                            </option>
+                                        ))}
+                                    </select>
                                 </div>
                                 <div className="pd-cart-row">
                                     <span className="pd-cart-label">Pack Quantity:</span>
@@ -198,12 +188,22 @@ export default function ProductDetailsPage() {
                                     </div>
                                 </div>
                                 <div className="pd-cart-row">
-                                    <span className="pd-cart-label">Total Weight:</span>
-                                    <span className="pd-cart-value">{totalWeight} kg</span>
+                                    <span className="pd-cart-label">Subtotal:</span>
+                                    <span className="pd-cart-value fw-bold">{selectedQty ? (parseFloat(selectedQty.price) * packQty).toFixed(2) : "—"} MAD</span>
                                 </div>
-                                <button className="pd-btn-add-cart" onClick={handleAddToCart} id="product-add-cart">
+                                <button className="pd-btn-add-cart" onClick={handleAddToCart} id="product-add-cart" disabled={!selectedQty || !firstHarvest}>
                                     🛒 Add to Cart
                                 </button>
+                            </div>
+                        )}
+
+                        {isAvailable && (!product.quantities?.length || !firstHarvest) && (
+                            <div className="pd-cart-section">
+                                <Alert variant="warning" className="mb-0">
+                                    {!product.quantities?.length && "No pack options available. "}
+                                    {!firstHarvest && "No harvests currently open. "}
+                                    Contact the farmer for more info.
+                                </Alert>
                             </div>
                         )}
 
@@ -581,4 +581,4 @@ const styles = `
     0% { background-position: 200% 0; }
     100% { background-position: -200% 0; }
 }
-`;
+`;

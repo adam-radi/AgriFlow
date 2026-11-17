@@ -60,8 +60,8 @@ export default function HarvestForm({
                             type="number"
                             min="0"
                             step="0.01"
-                            name="estimated_quantity"
-                            value={form.estimated_quantity || ""}
+                            name="estimated_total_qte"
+                            value={form.estimated_total_qte || ""}
                             onChange={handleChange}
                             placeholder="e.g. 1000"
                             required
@@ -75,8 +75,8 @@ export default function HarvestForm({
                             type="number"
                             min="0"
                             step="0.01"
-                            name="max_quantity_per_day"
-                            value={form.max_quantity_per_day || ""}
+                            name="max_daily_qte"
+                            value={form.max_daily_qte || ""}
                             onChange={handleChange}
                             placeholder="e.g. 100"
                         />

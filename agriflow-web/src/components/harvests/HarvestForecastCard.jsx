@@ -1,9 +1,10 @@
 import { Card, Row, Col, ProgressBar } from "react-bootstrap";
 
 export default function HarvestForecastCard({ forecast = {} }) {
+    const estQty = forecast.estimated_total_qte ?? forecast.estimated_quantity ?? 0;
     const usagePct = forecast.capacity_usage_pct ?? (
-        forecast.estimated_quantity > 0
-            ? ((forecast.reserved_quantity / forecast.estimated_quantity) * 100).toFixed(1)
+        estQty > 0
+            ? ((forecast.reserved_quantity / estQty) * 100).toFixed(1)
             : 0
     );
 

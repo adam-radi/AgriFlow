@@ -32,11 +32,11 @@ export default function HarvestCard({ harvest, linkPrefix = "/farmer/harvests" }
                     </div>
                     <div className="d-flex justify-content-between mb-1">
                         <span>Est. Qty:</span>
-                        <span className="fw-medium">{harvest.estimated_quantity ?? "—"}</span>
+                        <span className="fw-medium">{harvest.estimated_total_qte ?? "—"}</span>
                     </div>
                     <div className="d-flex justify-content-between">
                         <span>Daily Limit:</span>
-                        <span className="fw-medium">{harvest.max_quantity_per_day ?? "—"}</span>
+                        <span className="fw-medium">{harvest.max_daily_qte ?? "—"}</span>
                     </div>
                 </div>
                 <Link to={`${linkPrefix}/${harvest.id}`} className="btn btn-outline-success btn-sm mt-3 w-100">

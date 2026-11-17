@@ -3,25 +3,20 @@
 
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { productAPI } from "./productApi";
-import { mockProducts } from "../../api/mockData";
 
-// ─── ASYNC THUNKS ─────────────────────────────────────────────────────────────
+function unwrapData(res) {
+    return res.data?.data ?? res.data;
+}
 
-/** Fetch public product catalog (supports pagination + search) */
+/** Fetch public product catalog (supports pagination) */
 export const fetchProducts = createAsyncThunk(
     "products/fetchAll",
     async (params = {}, { rejectWithValue }) => {
         try {
             const res = await productAPI.getAll(params);
-            const data = res.data;
-            const hasData = Array.isArray(data) ? data.length > 0 : (data.results?.length > 0 || data.products?.length > 0);
-            if (!hasData) {
-                return mockProducts;
-            }
-            return data;
+            return unwrapData(res);
         } catch (err) {
-            console.warn("API products call failed, falling back to mockProducts:", err);
-            return mockProducts;
+            return rejectWithValue(err.response?.data || "Failed to load products");
         }
     }
 );
@@ -32,11 +27,8 @@ export const fetchProductById = createAsyncThunk(
     async (id, { rejectWithValue }) => {
         try {
             const res = await productAPI.getById(id);
-            return res.data;
+            return unwrapData(res);
         } catch (err) {
-            console.warn(`API product detail call failed for id ${id}, falling back to mockProducts:`, err);
-            const found = mockProducts.find(p => p.id === parseInt(id) || p.id === id);
-            if (found) return found;
             return rejectWithValue(err.response?.data || "Product not found");
         }
     }
@@ -48,15 +40,9 @@ export const fetchFarmerProducts = createAsyncThunk(
     async (_, { rejectWithValue }) => {
         try {
             const res = await productAPI.getFarmerProducts();
-            const data = res.data;
-            const hasData = Array.isArray(data) ? data.length > 0 : (data.results?.length > 0 || data.products?.length > 0);
-            if (!hasData) {
-                return mockProducts;
-            }
-            return data;
+            return unwrapData(res);
         } catch (err) {
-            console.warn("API farmer products call failed, falling back to mockProducts:", err);
-            return mockProducts;
+            return rejectWithValue(err.response?.data || "Failed to load farmer products");
         }
     }
 );
@@ -67,7 +53,7 @@ export const createProduct = createAsyncThunk(
     async (formData, { rejectWithValue }) => {
         try {
             const res = await productAPI.create(formData);
-            return res.data;
+            return unwrapData(res);
         } catch (err) {
             return rejectWithValue(err.response?.data || "Failed to create product");
         }
@@ -80,7 +66,7 @@ export const updateProduct = createAsyncThunk(
     async ({ id, formData }, { rejectWithValue }) => {
         try {
             const res = await productAPI.update(id, formData);
-            return res.data;
+            return unwrapData(res);
         } catch (err) {
             return rejectWithValue(err.response?.data || "Failed to update product");
         }
@@ -153,14 +139,20 @@ const productSlice = createSlice({
             })
             .addCase(fetchProducts.fulfilled, (state, action) => {
                 state.loading = false;
-                // Support both paginated { results, count } and plain array responses
-                const data = action.payload;
-                if (Array.isArray(data)) {
-                    state.products = data;
+                const payload = action.payload;
+
+                // Laravel paginated response wrapped in { data: [...], meta: {...} }
+                if (payload && payload.data && Array.isArray(payload.data)) {
+                    state.products = payload.data;
+                    state.pagination.totalItems  = payload.meta?.total      ?? payload.data.length;
+                    state.pagination.totalPages  = payload.meta?.last_page  ?? 1;
+                } else if (Array.isArray(payload)) {
+                    state.products = payload;
                 } else {
-                    state.products = data.results ?? data.products ?? [];
-                    state.pagination.totalItems = data.count ?? data.total ?? state.products.length;
-                    state.pagination.totalPages = data.total_pages ?? Math.ceil(state.pagination.totalItems / 10);
+                    // fallback for other shapes
+                    state.products = payload?.results ?? payload?.products ?? payload?.data ?? [];
+                    state.pagination.totalItems = payload?.count ?? payload?.total ?? payload?.meta?.total ?? state.products.length;
+                    state.pagination.totalPages = payload?.total_pages ?? payload?.meta?.last_page ?? Math.ceil(state.pagination.totalItems / 10);
                 }
             })
             .addCase(fetchProducts.rejected, (state, action) => {

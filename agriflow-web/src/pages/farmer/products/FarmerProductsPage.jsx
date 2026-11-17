@@ -168,7 +168,6 @@ const styles = `
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 .fp-page {
     min-height: 100vh;
-    background: linear-gradient(160deg,#0a1628 0%,#0d2b1a 50%,#0a1628 100%);
     font-family: 'Inter',sans-serif;
     color: #e2e8f0;
     padding: 2.5rem 2rem 4rem;
