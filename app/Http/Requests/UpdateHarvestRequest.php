@@ -1,0 +1,26 @@
+<?php
+
+namespace App\Http\Requests;
+
+use App\Enums\HarvestStatus;
+use Illuminate\Contracts\Validation\ValidationRule;
+use Illuminate\Foundation\Http\FormRequest;
+
+class UpdateHarvestRequest extends FormRequest
+{
+    public function authorize(): bool
+    {
+        return true;
+    }
+
+    public function rules(): array
+    {
+       return [
+            'start_date'             => 'sometimes|date',
+            'end_date'               => 'nullable|date|after_or_equal:start_date',
+            'estimated_total_qte'    => 'sometimes|numeric|min:0',
+            'max_daily_qte'          => 'sometimes|numeric|min:0',
+            'status'                 => 'required|in:' . HarvestStatus::Open . ',' . HarvestStatus::Close,
+        ];
+    }
+}
