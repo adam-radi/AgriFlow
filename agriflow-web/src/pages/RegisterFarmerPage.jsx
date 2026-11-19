@@ -10,7 +10,8 @@ import {
 import "../assets/auth.css";
 
 export default function RegisterFarmerPage() {
-    const [formData, setFormData] = useState({
+
+  const [formData, setFormData] = useState({
         name: "",
         email: "",
         password: "",
@@ -147,7 +148,7 @@ export default function RegisterFarmerPage() {
                                             className="auth-input"
                                             type={showPassword ? "text" : "password"}
                                             name="password"
-                                            placeholder="Min. 6 characters"
+                                            placeholder="Min. 8 characters"
                                             value={formData.password}
                                             onChange={handleChange}
                                             required
