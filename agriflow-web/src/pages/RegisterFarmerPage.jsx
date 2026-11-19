@@ -10,7 +10,8 @@ import {
 import "../assets/auth.css";
 
 export default function RegisterFarmerPage() {
-    const [formData, setFormData] = useState({
+
+  const [formData, setFormData] = useState({
         name: "",
         email: "",
         password: "",

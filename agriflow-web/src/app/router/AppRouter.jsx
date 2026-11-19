@@ -8,6 +8,7 @@ import ProtectedRoute from "../../components/common/ProtectedRoute";
 
 // Auth pages
 import LoginPage from "../../pages/LoginPage";
+import RegisterPage from "../../pages/RegisterPage";
 import RegisterClientPage from "../../pages/RegisterClient";
 import RegisterFarmerPage from "../../pages/RegisterFarmerPage";
 
@@ -61,6 +62,7 @@ function AppRouter() {
                 {/* ── Public Auth Routes ─────────────────────────────── */}
                 <Route element={<AuthLayout />}>
                     <Route path="/login" element={<LoginPage />} />
+                    <Route path="/register" element={<RegisterPage />} />
                     <Route path="/register/client" element={<RegisterClientPage />} />
                     <Route path="/register/farmer" element={<RegisterFarmerPage />} />
                 </Route>
