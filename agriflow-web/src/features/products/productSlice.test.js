@@ -66,7 +66,7 @@ describe("productSlice reducers", () => {
         expect(nextState.error).toBeNull();
     });
 
-    it("should set loading to false and populate products when fetchProducts is fulfilled", () => {
+    it("should set loading to false and populate products when fetchProducts is fulfilled with array", () => {
         const mockResponse = [
             { id: 1, name: "Argan Oil" },
             { id: 2, name: "Saffron Taliouine" }
@@ -78,5 +78,33 @@ describe("productSlice reducers", () => {
         const nextState = productReducer(initialState, action);
         expect(nextState.loading).toBe(false);
         expect(nextState.products).toEqual(mockResponse);
+        expect(nextState.pagination.totalItems).toBe(2);
+        expect(nextState.pagination.totalPages).toBe(1);
+    });
+
+    it("should parse Laravel paginated response structure with meta", () => {
+        const mockLaravelPayload = {
+            data: [
+                { id: 10, name: "Tomates Rondes", base_price: 5.5 },
+                { id: 11, name: "Oranges Navel", base_price: 7.0 }
+            ],
+            meta: {
+                current_page: 2,
+                last_page: 4,
+                total: 58,
+                per_page: 15
+            }
+        };
+        const action = {
+            type: fetchProducts.fulfilled.type,
+            payload: mockLaravelPayload,
+            meta: { arg: { page: 2 } }
+        };
+        const nextState = productReducer(initialState, action);
+        expect(nextState.loading).toBe(false);
+        expect(nextState.products).toHaveLength(2);
+        expect(nextState.pagination.currentPage).toBe(2);
+        expect(nextState.pagination.totalPages).toBe(4);
+        expect(nextState.pagination.totalItems).toBe(58);
     });
 });

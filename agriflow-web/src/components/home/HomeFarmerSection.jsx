@@ -1,5 +1,6 @@
 import { Container, Row, Col } from "react-bootstrap";
 import { Link } from "react-router-dom";
+import { Button, Card } from "../common";
 
 export default function HomeFarmerSection() {
     return (
@@ -16,8 +17,8 @@ export default function HomeFarmerSection() {
                         <div
                             className="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill mb-3"
                             style={{
-                                backgroundColor: "#E8F2EC",
-                                color: "#194638",
+                                backgroundColor: "var(--af-green-100, #E8F2EC)",
+                                color: "var(--af-green-900, #194638)",
                                 fontSize: "0.78rem",
                                 fontWeight: 700,
                                 letterSpacing: "0.06em",
@@ -29,7 +30,7 @@ export default function HomeFarmerSection() {
                         <h2
                             className="fw-bold mb-3"
                             style={{
-                                color: "#15372F",
+                                color: "var(--af-green-950, #15372F)",
                                 fontSize: "clamp(2rem, 3.6vw, 2.7rem)",
                                 lineHeight: 1.18,
                                 letterSpacing: "-0.03em",
@@ -41,7 +42,7 @@ export default function HomeFarmerSection() {
                         <p
                             className="mb-4"
                             style={{
-                                color: "#68756E",
+                                color: "var(--af-ink-600, #68756E)",
                                 fontSize: "1.05rem",
                                 lineHeight: 1.7,
                                 maxWidth: "620px",
@@ -53,21 +54,14 @@ export default function HomeFarmerSection() {
                         </p>
 
                         <div className="d-flex flex-column gap-3 mb-4">
-                            <div
-                                className="p-3 rounded-4"
-                                style={{
-                                    backgroundColor: "#FFFFFF",
-                                    border: "1px solid #E2E9E3",
-                                    boxShadow: "0 2px 8px rgba(21, 55, 47, 0.03)",
-                                }}
-                            >
+                            <Card className="p-3">
                                 <div className="d-flex align-items-start gap-3">
                                     <span
                                         className="d-inline-flex align-items-center justify-content-center rounded-circle flex-shrink-0"
                                         style={{
                                             width: "30px",
                                             height: "30px",
-                                            backgroundColor: "#194638",
+                                            backgroundColor: "var(--af-green-900, #194638)",
                                             color: "#FFFFFF",
                                             fontWeight: 700,
                                             fontSize: "0.85rem",
@@ -76,31 +70,24 @@ export default function HomeFarmerSection() {
                                         01
                                     </span>
                                     <div>
-                                        <div className="fw-bold" style={{ color: "#15372F", fontSize: "0.98rem" }}>
+                                        <div className="fw-bold" style={{ color: "var(--af-green-950, #15372F)", fontSize: "0.98rem" }}>
                                             Fixation 100% autonome des tarifs
                                         </div>
-                                        <div className="small" style={{ color: "#68756E", lineHeight: 1.5 }}>
+                                        <div className="small" style={{ color: "var(--af-ink-600, #68756E)", lineHeight: 1.5 }}>
                                             Fixez vos prix nets par cagette, kilo ou palette selon vos coûts réels de production.
                                         </div>
                                     </div>
                                 </div>
-                            </div>
+                            </Card>
 
-                            <div
-                                className="p-3 rounded-4"
-                                style={{
-                                    backgroundColor: "#FFFFFF",
-                                    border: "1px solid #E2E9E3",
-                                    boxShadow: "0 2px 8px rgba(21, 55, 47, 0.03)",
-                                }}
-                            >
+                            <Card className="p-3">
                                 <div className="d-flex align-items-start gap-3">
                                     <span
                                         className="d-inline-flex align-items-center justify-content-center rounded-circle flex-shrink-0"
                                         style={{
                                             width: "30px",
                                             height: "30px",
-                                            backgroundColor: "#194638",
+                                            backgroundColor: "var(--af-green-900, #194638)",
                                             color: "#FFFFFF",
                                             fontWeight: 700,
                                             fontSize: "0.85rem",
@@ -109,31 +96,24 @@ export default function HomeFarmerSection() {
                                         02
                                     </span>
                                     <div>
-                                        <div className="fw-bold" style={{ color: "#15372F", fontSize: "0.98rem" }}>
+                                        <div className="fw-bold" style={{ color: "var(--af-green-950, #15372F)", fontSize: "0.98rem" }}>
                                             Publication en temps réel des récoltes
                                         </div>
-                                        <div className="small" style={{ color: "#68756E", lineHeight: 1.5 }}>
+                                        <div className="small" style={{ color: "var(--af-ink-600, #68756E)", lineHeight: 1.5 }}>
                                             Mettez en ligne vos stocks immédiatement disponibles ou planifiez des pré-commandes de récoltes à venir.
                                         </div>
                                     </div>
                                 </div>
-                            </div>
+                            </Card>
 
-                            <div
-                                className="p-3 rounded-4"
-                                style={{
-                                    backgroundColor: "#FFFFFF",
-                                    border: "1px solid #E2E9E3",
-                                    boxShadow: "0 2px 8px rgba(21, 55, 47, 0.03)",
-                                }}
-                            >
+                            <Card className="p-3">
                                 <div className="d-flex align-items-start gap-3">
                                     <span
                                         className="d-inline-flex align-items-center justify-content-center rounded-circle flex-shrink-0"
                                         style={{
                                             width: "30px",
                                             height: "30px",
-                                            backgroundColor: "#194638",
+                                            backgroundColor: "var(--af-green-900, #194638)",
                                             color: "#FFFFFF",
                                             fontWeight: 700,
                                             fontSize: "0.85rem",
@@ -142,31 +122,27 @@ export default function HomeFarmerSection() {
                                         03
                                     </span>
                                     <div>
-                                        <div className="fw-bold" style={{ color: "#15372F", fontSize: "0.98rem" }}>
+                                        <div className="fw-bold" style={{ color: "var(--af-green-950, #15372F)", fontSize: "0.98rem" }}>
                                             Validation et garantie de profil
                                         </div>
-                                        <div className="small" style={{ color: "#68756E", lineHeight: 1.5 }}>
+                                        <div className="small" style={{ color: "var(--af-ink-600, #68756E)", lineHeight: 1.5 }}>
                                             Notre équipe vérifie votre statut agricole pour sécuriser vos relations commerciales.
                                         </div>
                                     </div>
                                 </div>
-                            </div>
+                            </Card>
                         </div>
 
-                        <Link
+                        <Button
+                            as={Link}
                             to="/register/farmer"
-                            className="text-decoration-none d-inline-flex align-items-center gap-2 rounded-pill px-4 py-3"
-                            style={{
-                                backgroundColor: "#194638",
-                                color: "#FFFFFF",
-                                fontSize: "0.96rem",
-                                fontWeight: 700,
-                                boxShadow: "0 4px 14px rgba(25, 70, 56, 0.22)",
-                            }}
+                            variant="primary"
+                            pill
+                            size="lg"
                         >
                             <span>Créer un compte Producteur</span>
-                            <span>→</span>
-                        </Link>
+                            <span className="ms-1">→</span>
+                        </Button>
                     </Col>
 
                     {/* Right Column: Visual Summary Card */}
@@ -174,7 +150,7 @@ export default function HomeFarmerSection() {
                         <div
                             className="p-4 p-md-5 rounded-4 text-white"
                             style={{
-                                backgroundColor: "#15372F",
+                                backgroundColor: "var(--af-green-950, #15372F)",
                                 border: "1px solid rgba(226, 233, 227, 0.2)",
                                 boxShadow: "0 18px 40px rgba(21, 55, 47, 0.16)",
                                 position: "relative",
@@ -224,13 +200,15 @@ export default function HomeFarmerSection() {
                             </div>
 
                             <div className="pt-2">
-                                <Link
+                                <Button
+                                    as={Link}
                                     to="/register/farmer"
-                                    className="btn btn-light rounded-pill w-100 py-2 fw-bold text-center"
-                                    style={{ color: "#15372F", fontSize: "0.92rem" }}
+                                    variant="secondary"
+                                    block
+                                    pill
                                 >
                                     Rejoindre le réseau de producteurs →
-                                </Link>
+                                </Button>
                             </div>
                         </div>
                     </Col>

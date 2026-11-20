@@ -1,7 +1,8 @@
-﻿import HomePage from "../pages/public/HomePage";
+import HomePage from "../pages/public/HomePage";
 import ProductsPage from "../pages/public/ProductsPage";
 import ProductDetailsPage from "../pages/public/ProductDetailsPage";
 import LoginPage from "../pages/LoginPage";
+import RegisterPage from "../pages/RegisterPage";
 import RegisterClientPage from "../pages/RegisterClient";
 import RegisterFarmerPage from "../pages/RegisterFarmerPage";
 
@@ -13,6 +14,7 @@ const publicRoutes = [
 
 const authRoutes = [
     { path: "/login", element: LoginPage },
+    { path: "/register", element: RegisterPage },
     { path: "/register/client", element: RegisterClientPage },
     { path: "/register/farmer", element: RegisterFarmerPage },
 ];

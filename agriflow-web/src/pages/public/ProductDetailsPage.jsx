@@ -1,584 +1,568 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { Alert } from "react-bootstrap";
-import { fetchProductById, clearSelectedProduct } from "../../features/products/productSlice";
+import { Container, Row, Col, Alert } from "react-bootstrap";
+import {
+    fetchProductById,
+    fetchProducts,
+    clearSelectedProduct,
+} from "../../features/products/productSlice";
 import {
     selectSelectedProduct,
     selectProductsLoading,
     selectProductsError,
+    selectAllProducts,
 } from "../../features/products/productSelectors";
 import { addToCart } from "../../features/orders/cartSlice";
 
-const PLACEHOLDER_IMG = "https://images.unsplash.com/photo-1542838132-92c53300491e?w=800&q=80";
+import {
+    ProductGallery,
+    ProductProducerCard,
+    ProductSpecsTable,
+    ProductInquiryModal,
+    ProductCard,
+} from "../../components/products";
+import {
+    Badge,
+    Button,
+    LoadingState,
+    EmptyState,
+    ErrorState,
+} from "../../components/common";
 
-function DetailRow({ icon, label, value }) {
-    if (!value) return null;
-    return (
-        <div className="pd-detail-row">
-            <span className="pd-detail-icon">{icon}</span>
-            <div>
-                <p className="pd-detail-label">{label}</p>
-                <p className="pd-detail-value">{value}</p>
-            </div>
-        </div>
-    );
-}
-
+/**
+ * ProductDetailsPage — Landing page épurée et professionnelle pour chaque récolte
+ * Présentation aérée, concise et visuelle, sans blocs de texte surchargés.
+ */
 export default function ProductDetailsPage() {
     const { id } = useParams();
     const dispatch = useDispatch();
     const navigate = useNavigate();
+
     const product = useSelector(selectSelectedProduct);
+    const allProducts = useSelector(selectAllProducts);
     const loading = useSelector(selectProductsLoading);
     const error = useSelector(selectProductsError);
-    const [packQty, setPackQty] = useState(1);
-    const [selectedQtyId, setSelectedQtyId] = useState(null);
+    const { isAuthenticated } = useSelector((state) => state.auth);
 
+    // États locaux
+    const [selectedQtyId, setSelectedQtyId] = useState(null);
+    const [packQty, setPackQty] = useState(1);
+    const [showInquiryModal, setShowInquiryModal] = useState(false);
+    const [cartSuccess, setCartSuccess] = useState(false);
+
+    // Chargement de la fiche produit par son identifiant
     useEffect(() => {
         dispatch(fetchProductById(id));
-        return () => dispatch(clearSelectedProduct());
+        return () => {
+            dispatch(clearSelectedProduct());
+        };
     }, [dispatch, id]);
 
+    // Chargement des autres produits pour alimenter les récoltes similaires
     useEffect(() => {
-        if (product?.quantities?.length && !selectedQtyId) {
-            setSelectedQtyId(product.quantities[0].id);
+        if (!allProducts || allProducts.length === 0) {
+            dispatch(fetchProducts({ page: 1 }));
         }
-    }, [product, selectedQtyId]);
+    }, [dispatch, allProducts]);
 
-    if (loading) return (
-        <>
-            <style>{styles}</style>
-            <div className="pd-page">
-                <div className="pd-skeleton-page">
-                    <div className="pd-sk pd-sk-img" />
-                    <div className="pd-sk-body">
-                        <div className="pd-sk pd-sk-line w80" />
-                        <div className="pd-sk pd-sk-line w60" />
-                        <div className="pd-sk pd-sk-line w90" />
-                        <div className="pd-sk pd-sk-line w40" />
-                    </div>
-                </div>
-            </div>
-        </>
-    );
+    // Détermination de la récolte active et du conditionnement sélectionné
+    const quantities = product?.quantities || [];
+    const selectedQty =
+        quantities.find((q) => q.id === selectedQtyId) ||
+        quantities[0] ||
+        null;
 
-    if (error || !product) return (
-        <>
-            <style>{styles}</style>
-            <div className="pd-page" style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <div style={{ textAlign: "center" }}>
-                    <div style={{ fontSize: "4rem", marginBottom: "1rem" }}>🌾</div>
-                    <h2 style={{ color: "#f1f5f9", marginBottom: ".5rem" }}>Product not found</h2>
-                    <p style={{ color: "#64748b", marginBottom: "1.5rem" }}>
-                        {typeof error === "string" ? error : "This product doesn't exist or has been removed."}
-                    </p>
-                    <Link to="/products" className="pd-btn-primary">← Back to Marketplace</Link>
-                </div>
-            </div>
-        </>
-    );
+    const firstHarvest = product?.harvests?.[0] || null;
+    const isAvailable = product?.is_available !== false;
 
-    const isAvailable = product.is_available !== false;
-    const selectedQty = product.quantities?.find((q) => q.id === selectedQtyId) || product.quantities?.[0] || null;
-    const price = selectedQty ? `${parseFloat(selectedQty.price).toFixed(2)} MAD/pack` : "Contact farmer";
-    const firstHarvest = product.harvests?.[0] || null;
+    // Calcul du prix unitaire affiché
+    let unitPrice = null;
+    let unitLabel = "l'unité";
 
-    function handleAddToCart() {
-        if (!selectedQty || !firstHarvest) return;
-        dispatch(addToCart({
-            harvest_id: firstHarvest.id,
-            quantity_standard_id: selectedQty.id,
-            quantity: packQty,
-        }));
+    if (selectedQty) {
+        unitPrice = parseFloat(selectedQty.price);
+        unitLabel = `Pack ${selectedQty.label} kg`;
+    } else if (product?.price != null) {
+        unitPrice = parseFloat(product.price);
+        unitLabel = "kg";
+    } else if (product?.base_price != null) {
+        unitPrice = parseFloat(product.base_price);
+        unitLabel = "kg";
     }
 
+    // Récoltes similaires (même terroir ou même producteur, en excluant le produit courant)
+    const relatedProducts = useMemo(() => {
+        if (!product || !Array.isArray(allProducts) || allProducts.length === 0) return [];
+        const others = allProducts.filter((p) => String(p.id) !== String(product.id));
+
+        const sameZoneOrFarmer = others.filter(
+            (p) =>
+                (product.farmer?.zone && p.farmer?.zone === product.farmer?.zone) ||
+                (product.farmer?.id && p.farmer?.id === product.farmer?.id)
+        );
+
+        if (sameZoneOrFarmer.length >= 3) {
+            return sameZoneOrFarmer.slice(0, 4);
+        }
+        return others.slice(0, 4);
+    }, [product, allProducts]);
+
+    // Gestion de l'ajout au panier / commande
+    const handleAddToCart = () => {
+        if (!selectedQty || !firstHarvest) return;
+        if (!isAuthenticated) {
+            navigate("/login");
+            return;
+        }
+
+        dispatch(
+            addToCart({
+                harvest_id: firstHarvest.id,
+                quantity_standard_id: selectedQty.id,
+                quantity: packQty,
+            })
+        );
+        setCartSuccess(true);
+        setTimeout(() => setCartSuccess(false), 4000);
+    };
+
+    const handleRetry = () => {
+        dispatch(fetchProductById(id));
+    };
+
+    // ─── ÉTATS DE CHARGEMENT ET ERREURS ──────────────────────────────────────────
+
+    if (loading && !product) {
+        return (
+            <div
+                className="py-5"
+                style={{
+                    backgroundColor: "var(--af-canvas, #F6F8F5)",
+                    minHeight: "calc(100vh - 88px)",
+                }}
+            >
+                <Container className="py-4">
+                    <LoadingState variant="table" count={4} />
+                </Container>
+            </div>
+        );
+    }
+
+    if (error || !product) {
+        return (
+            <div
+                className="py-5"
+                style={{
+                    backgroundColor: "var(--af-canvas, #F6F8F5)",
+                    minHeight: "calc(100vh - 88px)",
+                }}
+            >
+                <Container className="py-5">
+                    {error ? (
+                        <ErrorState
+                            title="Erreur lors de l'accès au produit"
+                            message={
+                                typeof error === "string"
+                                    ? error
+                                    : "Ce produit agricole n'a pas pu être chargé depuis la base de données."
+                            }
+                            onRetry={handleRetry}
+                        />
+                    ) : (
+                        <EmptyState
+                            title="Produit introuvable"
+                            description="Cette récolte n'existe plus ou a été retirée par son exploitant."
+                            action={
+                                <Button as={Link} to="/products" variant="primary" pill>
+                                    Retour au catalogue des récoltes
+                                </Button>
+                            }
+                        />
+                    )}
+                </Container>
+            </div>
+        );
+    }
+
+    // ─── RENDU PRINCIPAL ─────────────────────────────────────────────────────────
+
+    const farmerZone = product.farmer?.zone || "Maroc";
+    const categoryOrVariety =
+        (typeof product.category === "object" ? product.category?.name : product.category) ||
+        product.variety ||
+        "Récolte de terroir";
+
     return (
-        <>
-            <style>{styles}</style>
-            <div className="pd-page">
+        <div
+            className="pb-5"
+            style={{
+                backgroundColor: "var(--af-canvas, #F6F8F5)",
+                minHeight: "calc(100vh - 88px)",
+            }}
+        >
+            <Container className="py-4 py-md-5">
+                {/* ── B. Fil d'Ariane épuré ───────────────────────────── */}
+                <nav aria-label="Fil d'Ariane" className="mb-4">
+                    <ol className="breadcrumb m-0 d-flex align-items-center gap-2 small">
+                        <li className="breadcrumb-item">
+                            <Link
+                                to="/"
+                                className="text-decoration-none"
+                                style={{ color: "var(--af-ink-600, #68756E)", fontWeight: 500 }}
+                            >
+                                Accueil
+                            </Link>
+                        </li>
+                        <li className="breadcrumb-item">
+                            <Link
+                                to="/products"
+                                className="text-decoration-none"
+                                style={{ color: "var(--af-ink-600, #68756E)", fontWeight: 500 }}
+                            >
+                                Catalogue des récoltes
+                            </Link>
+                        </li>
+                        <li
+                            className="breadcrumb-item active text-truncate"
+                            style={{
+                                color: "var(--af-green-950, #15372F)",
+                                fontWeight: 600,
+                                maxWidth: "260px",
+                            }}
+                            aria-current="page"
+                        >
+                            {product.name}
+                        </li>
+                    </ol>
+                </nav>
 
-                {/* ── Back nav ── */}
-                <div className="pd-topnav">
-                    <button className="pd-back-btn" onClick={() => navigate(-1)} id="product-detail-back">
-                        ← Back
-                    </button>
-                    <span className="pd-breadcrumb">
-                        <Link to="/products">Marketplace</Link> / {product.name}
-                    </span>
-                </div>
+                {/* ── C. Présentation principale (Galerie & Bloc d'achat) ── */}
+                <Row className="g-4 g-lg-5 mb-5 align-items-start">
+                    {/* Colonne Gauche : Product Gallery */}
+                    <Col xs={12} lg={6}>
+                        <ProductGallery
+                            primaryImage={product.image}
+                            productName={product.name}
+                            isAvailable={isAvailable}
+                            zone={farmerZone}
+                        />
+                    </Col>
 
-                {/* ── Card ── */}
-                <div className="pd-card">
-                    {/* Image column */}
-                    <div className="pd-img-col">
-                        <div className="pd-img-wrap">
-                            <img
-                                src={product.image || PLACEHOLDER_IMG}
-                                alt={product.name}
-                                className="pd-img"
-                                onError={(e) => { e.target.src = PLACEHOLDER_IMG; }}
-                            />
-                            <span className={`pd-status-badge${isAvailable ? " available" : " out"}`}>
-                                {isAvailable ? "✔ Available" : "✗ Out of stock"}
-                            </span>
-                        </div>
-                    </div>
-
-                    {/* Info column */}
-                    <div className="pd-info-col">
-
-                        {/* Category pill */}
-                        {product.category && (
-                            <span className="pd-category-pill">{product.category}</span>
-                        )}
-
-                        <h1 className="pd-title" id="product-detail-title">{product.name}</h1>
-
-                        <p className="pd-price">{price}</p>
-
-                        <p className="pd-description">{product.description || "No description provided."}</p>
-
-                        <div className="pd-details-grid">
-                            <DetailRow icon="🌾" label="Farmer" value={product.farmer?.name} />
-                            <DetailRow icon="📍" label="Location" value={product.farmer?.location} />
-                        </div>
-
-                        {/* ── Upcoming Harvest Section ── */}
-                        {product.harvests?.length > 0 && (
-                            <div className="pd-harvest-section">
-                                <h3 className="pd-harvest-section-title">🌿 Available Harvests</h3>
-                                <div className="pd-harvest-grid">
-                                    {product.harvests.slice(0, 3).map((h) => (
-                                        <div key={h.id} className="pd-harvest-item">
-                                            <span className="pd-harvest-label">{h.start_date || "TBD"}</span>
-                                            <span className="pd-harvest-value text-success">
-                                                {h.estimated_total_qte ? `${h.estimated_total_qte} kg` : "Available"}
-                                            </span>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-
-                        {/* ── Add to Cart Section ── */}
-                        {isAvailable && product.quantities?.length > 0 && firstHarvest && (
-                            <div className="pd-cart-section">
-                                <div className="pd-cart-row">
-                                    <span className="pd-cart-label">Pack Type:</span>
-                                    <select
-                                        className="form-select form-select-sm"
-                                        style={{ width: "auto", minWidth: "120px" }}
-                                        value={selectedQtyId || ""}
-                                        onChange={(e) => setSelectedQtyId(Number(e.target.value))}
+                    {/* Colonne Droite : Informations Produit & Commerce */}
+                    <Col xs={12} lg={6}>
+                        <div className="d-flex flex-column h-100">
+                            {/* Puces de synthèse : catégorie, terroir, disponibilité */}
+                            <div className="d-flex align-items-center gap-2 mb-2 flex-wrap">
+                                <Badge variant="green">{categoryOrVariety}</Badge>
+                                <span
+                                    className="px-2 py-1 rounded-pill small fw-medium"
+                                    style={{ backgroundColor: "var(--af-surface, #FFFFFF)", border: "1px solid var(--af-border, #E2E9E3)", color: "var(--af-ink-700, #3F4D45)" }}
+                                >
+                                    📍 Bassin {farmerZone}
+                                </span>
+                                {isAvailable ? (
+                                    <span
+                                        className="px-2 py-1 rounded-pill small fw-medium"
+                                        style={{ backgroundColor: "var(--af-green-100, #E8F2EC)", color: "var(--af-green-900, #194638)" }}
                                     >
-                                        {product.quantities.map((q) => (
-                                            <option key={q.id} value={q.id}>
-                                                {q.label} — {parseFloat(q.price).toFixed(2)} MAD
-                                            </option>
-                                        ))}
-                                    </select>
+                                        ✓ En stock
+                                    </span>
+                                ) : (
+                                    <span
+                                        className="px-2 py-1 rounded-pill small fw-medium text-danger"
+                                        style={{ backgroundColor: "#FEE2E2" }}
+                                    >
+                                        Épuisé
+                                    </span>
+                                )}
+                            </div>
+
+                            {/* Nom du produit */}
+                            <h1
+                                className="fw-bold mb-3"
+                                style={{
+                                    color: "var(--af-green-950, #15372F)",
+                                    fontSize: "clamp(2rem, 3.4vw, 2.7rem)",
+                                    letterSpacing: "-0.025em",
+                                    lineHeight: 1.18,
+                                }}
+                            >
+                                {product.name}
+                            </h1>
+
+                            {/* Boîte tarifaire & actions commerciales */}
+                            <div
+                                className="p-4 rounded-4 mb-3"
+                                style={{
+                                    backgroundColor: "var(--af-surface, #FFFFFF)",
+                                    border: "1px solid var(--af-border, #E2E9E3)",
+                                }}
+                            >
+                                <div className="d-flex align-items-baseline gap-2 mb-3">
+                                    <span
+                                        className="fw-bold"
+                                        style={{
+                                            fontSize: "clamp(2rem, 3.2vw, 2.5rem)",
+                                            color: "var(--af-green-900, #194638)",
+                                            letterSpacing: "-0.03em",
+                                        }}
+                                    >
+                                        {unitPrice ? `${unitPrice.toFixed(2)} MAD` : "Sur devis"}
+                                    </span>
+                                    {unitPrice && (
+                                        <span
+                                            className="small"
+                                            style={{ color: "var(--af-ink-600, #68756E)", fontWeight: 500 }}
+                                        >
+                                            HT / {unitLabel}
+                                        </span>
+                                    )}
                                 </div>
-                                <div className="pd-cart-row">
-                                    <span className="pd-cart-label">Pack Quantity:</span>
-                                    <div className="pd-qty-control">
-                                        <button className="pd-qty-btn" onClick={() => setPackQty(Math.max(1, packQty - 1))}>−</button>
-                                        <span className="pd-qty-num">{packQty}</span>
-                                        <button className="pd-qty-btn" onClick={() => setPackQty(packQty + 1)}>+</button>
+
+                                {/* Sélecteur de packs si disponible */}
+                                {quantities.length > 0 && (
+                                    <div className="mb-3">
+                                        <label
+                                            className="small text-muted fw-semibold mb-2 d-block"
+                                        >
+                                            Conditionnement au choix :
+                                        </label>
+                                        <div className="d-flex flex-wrap gap-2">
+                                            {quantities.map((q) => {
+                                                const isSelected = selectedQty?.id === q.id;
+                                                return (
+                                                    <button
+                                                        key={q.id}
+                                                        type="button"
+                                                        onClick={() => setSelectedQtyId(q.id)}
+                                                        className="btn btn-sm rounded-pill px-3 py-1 fw-semibold transition-all"
+                                                        style={{
+                                                            backgroundColor: isSelected
+                                                                ? "var(--af-green-900, #194638)"
+                                                                : "var(--af-canvas, #F6F8F5)",
+                                                            color: isSelected ? "#FFFFFF" : "var(--af-ink-900, #1D2924)",
+                                                            border: isSelected
+                                                                ? "1px solid var(--af-green-900, #194638)"
+                                                                : "1px solid var(--af-border, #E2E9E3)",
+                                                            fontSize: "0.85rem",
+                                                        }}
+                                                    >
+                                                        Pack {q.label} kg · {parseFloat(q.price).toFixed(2)} MAD
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
                                     </div>
-                                </div>
-                                <div className="pd-cart-row">
-                                    <span className="pd-cart-label">Subtotal:</span>
-                                    <span className="pd-cart-value fw-bold">{selectedQty ? (parseFloat(selectedQty.price) * packQty).toFixed(2) : "—"} MAD</span>
-                                </div>
-                                <button className="pd-btn-add-cart" onClick={handleAddToCart} id="product-add-cart" disabled={!selectedQty || !firstHarvest}>
-                                    🛒 Add to Cart
-                                </button>
-                            </div>
-                        )}
+                                )}
 
-                        {isAvailable && (!product.quantities?.length || !firstHarvest) && (
-                            <div className="pd-cart-section">
-                                <Alert variant="warning" className="mb-0">
-                                    {!product.quantities?.length && "No pack options available. "}
-                                    {!firstHarvest && "No harvests currently open. "}
-                                    Contact the farmer for more info.
-                                </Alert>
-                            </div>
-                        )}
+                                {/* Quantité de packs si commande possible */}
+                                {isAvailable && firstHarvest && selectedQty && (
+                                    <div className="d-flex align-items-center justify-content-between mb-3 pt-2 border-top" style={{ borderColor: "var(--af-border, #E2E9E3)" }}>
+                                        <span className="small text-muted fw-semibold">
+                                            Quantité de packs :
+                                        </span>
+                                        <div className="d-flex align-items-center gap-2">
+                                            <button
+                                                type="button"
+                                                className="btn btn-sm btn-outline-secondary rounded-circle d-flex align-items-center justify-content-center"
+                                                style={{ width: "30px", height: "30px", padding: 0 }}
+                                                onClick={() => setPackQty(Math.max(1, packQty - 1))}
+                                            >
+                                                −
+                                            </button>
+                                            <span className="fw-bold px-2" style={{ minWidth: "26px", textAlign: "center" }}>
+                                                {packQty}
+                                            </span>
+                                            <button
+                                                type="button"
+                                                className="btn btn-sm btn-outline-secondary rounded-circle d-flex align-items-center justify-content-center"
+                                                style={{ width: "30px", height: "30px", padding: 0 }}
+                                                onClick={() => setPackQty(packQty + 1)}
+                                            >
+                                                +
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
 
-                        {/* CTA */}
-                        <div className="pd-actions">
-                            {!isAvailable && (
-                                <button className="pd-btn-primary" disabled id="product-order-btn">
-                                    Out of Stock
-                                </button>
-                            )}
-                            <Link to="/products" className="pd-btn-secondary" id="product-back-catalog">
-                                Browse More
+                                {cartSuccess && (
+                                    <Alert
+                                        variant="success"
+                                        className="rounded-3 mb-3 py-2 small"
+                                        style={{ backgroundColor: "var(--af-green-100)", color: "var(--af-green-900)" }}
+                                    >
+                                        ✓ Ajouté à votre bon de commande !
+                                    </Alert>
+                                )}
+
+                                {/* Boutons d'action clairs */}
+                                <div className="d-flex flex-column gap-2">
+                                    <Button
+                                        type="button"
+                                        variant="primary"
+                                        size="lg"
+                                        pill
+                                        onClick={() => setShowInquiryModal(true)}
+                                        className="w-100"
+                                    >
+                                        Demander une cotation directe →
+                                    </Button>
+
+                                    {isAvailable && firstHarvest && selectedQty && (
+                                        <Button
+                                            type="button"
+                                            variant="secondary"
+                                            size="lg"
+                                            pill
+                                            onClick={handleAddToCart}
+                                            className="w-100"
+                                        >
+                                            Ajouter au panier ({((unitPrice || 0) * packQty).toFixed(2)} MAD)
+                                        </Button>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Repères qualité simples et sobres (sans phrases à rallonge) */}
+                            <div className="d-flex flex-wrap align-items-center gap-3 pt-1">
+                                <span className="small text-muted">
+                                    <strong style={{ color: "var(--af-green-700, #398565)" }}>✓</strong> Direct producteur
+                                </span>
+                                <span className="small text-muted">
+                                    <strong style={{ color: "var(--af-green-700, #398565)" }}>✓</strong> Chaîne du frais
+                                </span>
+                                <span className="small text-muted">
+                                    <strong style={{ color: "var(--af-green-700, #398565)" }}>✓</strong> Traçabilité garantie
+                                </span>
+                            </div>
+                        </div>
+                    </Col>
+                </Row>
+
+                {/* ── E. Description simple & Fiche technique ─────────── */}
+                <Row className="g-4 mb-5">
+                    <Col xs={12} lg={8}>
+                        {/* Bloc Description : sobre, aéré, sans lourdeur */}
+                        <div
+                            className="p-4 rounded-4 mb-4"
+                            style={{
+                                backgroundColor: "var(--af-surface, #FFFFFF)",
+                                border: "1px solid var(--af-border, #E2E9E3)",
+                            }}
+                        >
+                            <h3
+                                className="fw-bold mb-2"
+                                style={{
+                                    color: "var(--af-green-950, #15372F)",
+                                    fontSize: "1.15rem",
+                                    letterSpacing: "-0.015em",
+                                }}
+                            >
+                                Description de la récolte
+                            </h3>
+
+                            <p
+                                className="m-0"
+                                style={{
+                                    color: "var(--af-ink-700, #3F4D45)",
+                                    fontSize: "0.98rem",
+                                    lineHeight: 1.65,
+                                    maxWidth: "680px",
+                                }}
+                            >
+                                {product.description ||
+                                    "Récolte fraîche sélectionnée et préparée sur exploitation partenaire pour les professionnels de l'alimentation et de la distribution."}
+                            </p>
+                        </div>
+
+                        {/* ── G. Caractéristiques du lot (Grille synthétique) ── */}
+                        <ProductSpecsTable product={product} />
+                    </Col>
+
+                    {/* ── F. Profil du Producteur ────────────────────── */}
+                    <Col xs={12} lg={4}>
+                        <div className="sticky-top" style={{ top: "108px" }}>
+                            <ProductProducerCard
+                                farmer={product.farmer}
+                                onOpenInquiry={() => setShowInquiryModal(true)}
+                            />
+                        </div>
+                    </Col>
+                </Row>
+
+                {/* ── H. Récoltes similaires ─────────────────────────── */}
+                {relatedProducts.length > 0 && (
+                    <section aria-label="Récoltes similaires" className="pt-4 border-top" style={{ borderColor: "var(--af-border, #E2E9E3)" }}>
+                        <div className="d-flex justify-content-between align-items-baseline mb-4">
+                            <div>
+                                <span
+                                    className="small text-uppercase fw-bold"
+                                    style={{ color: "var(--af-green-700, #398565)", letterSpacing: "0.05em" }}
+                                >
+                                    RÉCOLTES DU MÊME TERROIR
+                                </span>
+                                <h3
+                                    className="fw-bold mt-1 m-0"
+                                    style={{ color: "var(--af-green-950, #15372F)", fontSize: "1.35rem" }}
+                                >
+                                    Autres récoltes disponibles
+                                </h3>
+                            </div>
+
+                            <Link
+                                to="/products"
+                                className="small fw-semibold text-decoration-none"
+                                style={{ color: "var(--af-green-900, #194638)" }}
+                            >
+                                Tout voir →
                             </Link>
                         </div>
+
+                        <Row className="g-4">
+                            {relatedProducts.map((relProduct) => (
+                                <Col key={relProduct.id} xs={12} sm={6} lg={3}>
+                                    <ProductCard product={relProduct} />
+                                </Col>
+                            ))}
+                        </Row>
+                    </section>
+                )}
+            </Container>
+
+            {/* ── I. Barre d'action mobile fixe ───────────────────────── */}
+            <div
+                className="d-lg-none position-fixed bottom-0 start-0 end-0 p-3 bg-white border-top shadow-lg"
+                style={{ zIndex: 1030, borderColor: "var(--af-border, #E2E9E3)" }}
+            >
+                <div className="d-flex align-items-center justify-content-between gap-3">
+                    <div>
+                        <span className="small text-muted d-block" style={{ fontSize: "0.75rem" }}>Prix net</span>
+                        <strong className="fw-bold" style={{ color: "var(--af-green-900)", fontSize: "1.1rem" }}>
+                            {unitPrice ? `${unitPrice.toFixed(2)} MAD` : "Sur devis"}
+                        </strong>
                     </div>
+
+                    <Button
+                        type="button"
+                        variant="primary"
+                        pill
+                        size="md"
+                        onClick={() => setShowInquiryModal(true)}
+                        className="flex-grow-1 text-center"
+                    >
+                        Demander cotation →
+                    </Button>
                 </div>
             </div>
-        </>
+
+            {/* ── Dialogue de cotation / prise de contact ────────────── */}
+            <ProductInquiryModal
+                show={showInquiryModal}
+                onHide={() => setShowInquiryModal(false)}
+                product={product}
+                farmer={product.farmer}
+            />
+        </div>
     );
 }
-
-/* ─── Styles ────────────────────────────────────────────────────────────────── */
-const styles = `
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-
-.pd-page {
-    min-height: 100vh;
-    background-color: #f5f8f6;
-    font-family: 'Inter', sans-serif;
-    color: #334155;
-    padding: 2rem 1.5rem 4rem;
-}
-
-/* ── Top nav ── */
-.pd-topnav {
-    max-width: 1100px;
-    margin: 0 auto 2rem;
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-}
-.pd-back-btn {
-    background: #ffffff;
-    border: 1.5px solid #cbd5e1;
-    color: #0f2942;
-    padding: .5rem 1rem;
-    border-radius: 10px;
-    cursor: pointer;
-    font-family: inherit;
-    font-size: .88rem;
-    font-weight: 700;
-    transition: all .15s;
-}
-.pd-back-btn:hover { border-color: #16a34a; color: #16a34a; background: #f0fdf4; }
-.pd-breadcrumb { font-size: .83rem; color: #475569; }
-.pd-breadcrumb a { color: #16a34a; text-decoration: none; font-weight: 600; }
-.pd-breadcrumb a:hover { text-decoration: underline; }
-
-/* ── Main card ── */
-.pd-card {
-    max-width: 1100px;
-    margin: 0 auto;
-    background: #ffffff;
-    border: 1px solid #e2ede6;
-    border-radius: 24px;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    overflow: hidden;
-    box-shadow: 0 10px 30px rgba(15, 41, 66, 0.08);
-}
-@media(max-width:768px) {
-    .pd-card { grid-template-columns: 1fr; }
-}
-
-/* ── Image column ── */
-.pd-img-col { position: relative; }
-.pd-img-wrap { position: relative; height: 100%; min-height: 360px; }
-.pd-img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-}
-.pd-status-badge {
-    position: absolute;
-    top: 1.2rem;
-    left: 1.2rem;
-    font-size: .78rem;
-    font-weight: 700;
-    padding: .4rem 1rem;
-    border-radius: 999px;
-    letter-spacing: .04em;
-}
-.pd-status-badge.available {
-    background: #d1fae5;
-    border: 1px solid #10b981;
-    color: #065f46;
-}
-.pd-status-badge.out {
-    background: #fee2e2;
-    border: 1px solid #ef4444;
-    color: #991b1b;
-}
-
-/* ── Info column ── */
-.pd-info-col {
-    padding: 2.5rem 2.2rem;
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-}
-
-.pd-category-pill {
-    display: inline-block;
-    background: #e6f7ed;
-    border: 1px solid rgba(22, 163, 74, 0.25);
-    color: #15803d;
-    font-size: .72rem;
-    font-weight: 700;
-    letter-spacing: .08em;
-    text-transform: uppercase;
-    padding: .3rem .85rem;
-    border-radius: 999px;
-    align-self: flex-start;
-}
-
-.pd-title {
-    font-size: clamp(1.5rem, 3vw, 2rem);
-    font-weight: 850;
-    color: #0f2942;
-    margin: 0;
-    line-height: 1.2;
-}
-
-.pd-price {
-    font-size: 1.7rem;
-    font-weight: 850;
-    color: #16a34a;
-    margin: 0;
-}
-
-.pd-description {
-    font-size: .93rem;
-    color: #475569;
-    line-height: 1.7;
-    margin: 0;
-}
-
-/* ── Details grid ── */
-.pd-details-grid {
-    display: flex;
-    flex-direction: column;
-    gap: .8rem;
-    padding: 1.2rem;
-    background: #f8faf9;
-    border-radius: 14px;
-    border: 1px solid #e2ede6;
-}
-.pd-detail-row {
-    display: flex;
-    align-items: flex-start;
-    gap: .85rem;
-}
-.pd-detail-icon { font-size: 1.1rem; margin-top: .1rem; flex-shrink: 0; }
-.pd-detail-label { font-size: .75rem; color: #64748b; margin: 0; text-transform: uppercase; letter-spacing: .06em; font-weight: 700; }
-.pd-detail-value { font-size: .9rem; color: #0f2942; margin: .1rem 0 0; font-weight: 600; }
-
-/* ── Harvest section ── */
-.pd-harvest-section {
-    padding: 1.2rem;
-    background: #e6f7ed;
-    border: 1px solid rgba(22, 163, 74, 0.2);
-    border-radius: 14px;
-}
-.pd-harvest-section-title {
-    font-size: .88rem;
-    font-weight: 700;
-    color: #15803d;
-    margin: 0 0 .8rem;
-}
-.pd-harvest-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: .6rem;
-}
-.pd-harvest-item {
-    display: flex;
-    flex-direction: column;
-    gap: .15rem;
-}
-.pd-harvest-label {
-    font-size: .7rem;
-    color: #475569;
-    text-transform: uppercase;
-    letter-spacing: .06em;
-    font-weight: 700;
-}
-.pd-harvest-value {
-    font-size: .88rem;
-    color: #0f2942;
-    font-weight: 700;
-}
-
-/* ── Harvest link ── */
-.pd-harvest-link {
-    display: inline-flex;
-    align-items: center;
-    gap: .4rem;
-    color: #15803d;
-    font-size: .88rem;
-    font-weight: 700;
-    text-decoration: none;
-    padding: .6rem 1rem;
-    border-radius: 10px;
-    background: #e6f7ed;
-    border: 1px solid rgba(22, 163, 74, 0.3);
-    transition: all .15s;
-    align-self: flex-start;
-}
-.pd-harvest-link:hover {
-    background: #d1fae5;
-    border-color: #10b981;
-}
-
-/* ── Add to Cart ── */
-.pd-cart-section {
-    padding: 1.2rem;
-    background: #f8faf9;
-    border: 1.5px solid #e2ede6;
-    border-radius: 14px;
-    display: flex;
-    flex-direction: column;
-    gap: .7rem;
-}
-.pd-cart-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-.pd-cart-label { font-size: .82rem; color: #475569; font-weight: 600; }
-.pd-cart-value { font-size: .9rem; color: #0f2942; font-weight: 750; }
-.pd-qty-control {
-    display: flex;
-    align-items: center;
-    gap: .5rem;
-    background: #ffffff;
-    border: 1px solid #cbd5e1;
-    border-radius: 10px;
-    padding: .2rem;
-}
-.pd-qty-btn {
-    width: 32px; height: 32px;
-    border-radius: 8px;
-    border: none;
-    background: #e6f7ed;
-    color: #15803d;
-    font-size: 1.1rem;
-    font-weight: 700;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background .15s;
-}
-.pd-qty-btn:hover { background: #d1fae5; }
-.pd-qty-num {
-    font-size: 1rem;
-    font-weight: 750;
-    color: #0f2942;
-    min-width: 24px;
-    text-align: center;
-}
-.pd-btn-add-cart {
-    width: 100%;
-    padding: .8rem;
-    border-radius: 12px;
-    border: none;
-    background: #16a34a;
-    color: #ffffff;
-    font-weight: 700;
-    font-size: .95rem;
-    cursor: pointer;
-    transition: transform .15s, background-color .15s, box-shadow .15s;
-    font-family: inherit;
-    box-shadow: 0 4px 12px rgba(22, 163, 74, 0.2);
-}
-.pd-btn-add-cart:hover {
-    background-color: #15803d;
-    transform: translateY(-1.5px);
-    box-shadow: 0 6px 18px rgba(22, 163, 74, 0.3);
-}
-
-/* ── Actions ── */
-.pd-actions { display: flex; gap: .8rem; flex-wrap: wrap; margin-top: .4rem; }
-
-.pd-btn-primary {
-    flex: 1;
-    min-width: 140px;
-    padding: .9rem 1.6rem;
-    border-radius: 12px;
-    border: none;
-    background: #16a34a;
-    color: #ffffff;
-    font-weight: 700;
-    font-size: .95rem;
-    cursor: pointer;
-    transition: transform .15s, background-color .15s, box-shadow .15s;
-    font-family: inherit;
-    text-align: center;
-    text-decoration: none;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 4px 12px rgba(22, 163, 74, 0.2);
-}
-.pd-btn-primary:hover:not(:disabled) {
-    background-color: #15803d;
-    transform: translateY(-1.5px);
-    box-shadow: 0 6px 18px rgba(22, 163, 74, 0.3);
-}
-.pd-btn-primary:disabled {
-    background: #e2e8f0;
-    cursor: not-allowed;
-    color: #94a3b8;
-    box-shadow: none;
-}
-
-.pd-btn-secondary {
-    flex: 1;
-    min-width: 140px;
-    padding: .9rem 1.6rem;
-    border-radius: 12px;
-    border: 1.5px solid #cbd5e1;
-    background: #ffffff;
-    color: #475569;
-    font-weight: 600;
-    font-size: .95rem;
-    cursor: pointer;
-    transition: all .15s;
-    font-family: inherit;
-    text-align: center;
-    text-decoration: none;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-}
-.pd-btn-secondary:hover {
-    border-color: #0f2942;
-    color: #0f2942;
-    background: #f8fafc;
-}
-
-/* ── Skeleton ── */
-.pd-skeleton-page {
-    max-width: 1100px;
-    margin: 2rem auto;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    border-radius: 24px;
-    overflow: hidden;
-    background: #ffffff;
-    border: 1px solid #e2ede6;
-}
-@media(max-width:768px){ .pd-skeleton-page{ grid-template-columns:1fr; } }
-.pd-sk {
-    background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-}
-.pd-sk-img { height: 100%; min-height: 360px; }
-.pd-sk-body { padding: 2.5rem; display: flex; flex-direction: column; gap: 1rem; }
-.pd-sk-line { height: 18px; border-radius: 8px; }
-.w80{ width: 80%; } .w60{ width: 60%; } .w90{ width: 90%; } .w40{ width: 40%; }
-@keyframes shimmer {
-    0% { background-position: 200% 0; }
-    100% { background-position: -200% 0; }
-}
-`;

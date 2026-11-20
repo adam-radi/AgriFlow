@@ -1,5 +1,6 @@
 import { Container, Row, Col } from "react-bootstrap";
 import { Link } from "react-router-dom";
+import { SectionHeader, Card, Badge } from "../common";
 
 const SECTORS = [
     {
@@ -42,31 +43,14 @@ export default function HomeCategories() {
             }}
         >
             <Container>
-                <div className="text-center mb-5" style={{ maxWidth: "680px", margin: "0 auto" }}>
-                    <div
-                        className="text-uppercase fw-bold mb-2"
-                        style={{
-                            color: "#398565",
-                            fontSize: "0.78rem",
-                            letterSpacing: "0.08em",
-                        }}
-                    >
-                        FILIÈRES AGRICOLES DU MAROC
-                    </div>
-                    <h2
-                        className="fw-bold mb-2"
-                        style={{
-                            color: "#15372F",
-                            letterSpacing: "-0.03em",
-                            fontSize: "clamp(1.8rem, 3.4vw, 2.5rem)",
-                        }}
-                    >
-                        Les terroirs et productions régionales
-                    </h2>
-                    <p style={{ color: "#68756E", fontSize: "1rem" }}>
-                        Naviguez au cœur des bassins agricoles du Royaume pour approvisionner votre établissement.
-                    </p>
-                </div>
+                {/* Standardized Centered Header */}
+                <SectionHeader
+                    eyebrow="Filières Agricoles du Maroc"
+                    title="Les terroirs et productions régionales"
+                    subtitle="Naviguez au cœur des bassins agricoles du Royaume pour approvisionner votre établissement."
+                    align="center"
+                    className="mb-5"
+                />
 
                 <Row className="g-4">
                     {SECTORS.map((sector, index) => (
@@ -76,25 +60,9 @@ export default function HomeCategories() {
                                 className="text-decoration-none d-block h-100"
                                 style={{ color: "inherit" }}
                             >
-                                <div
+                                <Card
+                                    variant="interactive"
                                     className="p-3 h-100 d-flex flex-column"
-                                    style={{
-                                        backgroundColor: "#FFFFFF",
-                                        borderRadius: "22px",
-                                        border: "1px solid #E2E9E3",
-                                        boxShadow: "0 2px 8px rgba(21, 55, 47, 0.04)",
-                                        transition: "transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease",
-                                    }}
-                                    onMouseEnter={(e) => {
-                                        e.currentTarget.style.transform = "translateY(-4px)";
-                                        e.currentTarget.style.boxShadow = "0 14px 28px rgba(21, 55, 47, 0.08)";
-                                        e.currentTarget.style.borderColor = "#CBD7CE";
-                                    }}
-                                    onMouseLeave={(e) => {
-                                        e.currentTarget.style.transform = "translateY(0)";
-                                        e.currentTarget.style.boxShadow = "0 2px 8px rgba(21, 55, 47, 0.04)";
-                                        e.currentTarget.style.borderColor = "#E2E9E3";
-                                    }}
                                 >
                                     {/* Thumbnail Image */}
                                     <div
@@ -105,7 +73,7 @@ export default function HomeCategories() {
                                             overflow: "hidden",
                                             marginBottom: "16px",
                                             position: "relative",
-                                            backgroundColor: "#E8F2EC",
+                                            backgroundColor: "var(--af-green-100, #E8F2EC)",
                                         }}
                                     >
                                         <img
@@ -124,47 +92,34 @@ export default function HomeCategories() {
                                                 position: "absolute",
                                                 top: "8px",
                                                 left: "8px",
-                                                padding: "3px 8px",
-                                                backgroundColor: "rgba(21, 55, 47, 0.75)",
-                                                backdropFilter: "blur(4px)",
-                                                color: "#FFFFFF",
-                                                borderRadius: "999px",
-                                                fontSize: "0.68rem",
-                                                fontWeight: 700,
                                             }}
                                         >
-                                            {sector.tag}
+                                            <Badge variant="green" size="sm">
+                                                {sector.tag}
+                                            </Badge>
                                         </div>
                                     </div>
 
-                                    <h4
-                                        className="fw-bold mb-2"
-                                        style={{
-                                            color: "#15372F",
-                                            fontSize: "1.1rem",
-                                            letterSpacing: "-0.01em",
-                                        }}
-                                    >
+                                    <Card.Title as="h4" className="mb-2" style={{ fontSize: "1.1rem" }}>
                                         {sector.title}
-                                    </h4>
+                                    </Card.Title>
 
                                     <p
                                         className="small mb-3 flex-grow-1"
-                                        style={{ color: "#68756E", lineHeight: 1.55 }}
+                                        style={{ color: "var(--af-ink-600, #68756E)", lineHeight: 1.55 }}
                                     >
                                         {sector.description}
                                     </p>
 
-                                    <div
-                                        className="pt-2 border-top mt-auto d-flex justify-content-between align-items-center"
-                                        style={{ borderColor: "#F0F3EF", fontSize: "0.8rem" }}
-                                    >
-                                        <span style={{ color: "#68756E" }}>{sector.region}</span>
-                                        <span className="fw-semibold" style={{ color: "#398565" }}>
+                                    <Card.Footer className="d-flex justify-content-between align-items-center">
+                                        <span style={{ color: "var(--af-ink-600, #68756E)", fontSize: "0.8rem" }}>
+                                            {sector.region}
+                                        </span>
+                                        <span className="fw-semibold" style={{ color: "var(--af-green-600, #398565)", fontSize: "0.82rem" }}>
                                             Explorer →
                                         </span>
-                                    </div>
-                                </div>
+                                    </Card.Footer>
+                                </Card>
                             </Link>
                         </Col>
                     ))}
