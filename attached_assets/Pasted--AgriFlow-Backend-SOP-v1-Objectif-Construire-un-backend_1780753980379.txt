@@ -1,0 +1,292 @@
+📘 AgriFlow Backend SOP v1
+🎯 Objectif
+
+Construire un backend Laravel API scalable qui gère :
+
+Authentification
+Produits
+Récoltes
+Commandes
+Livraisons
+Paiements
+Administration
+🏗️ Architecture Backend
+app/
+├── Models/
+├── Http/
+│   ├── Controllers/
+│   ├── Requests/
+│   └── Resources/
+├── Services/
+├── Policies/
+├── Enums/
+├── Exceptions/
+└── Actions/ (optionnel plus tard)
+🔐 PHASE 1 — AUTH
+Modules
+Users
+User
+
+roles :
+
+customer
+farmer
+delivery
+admin
+Features
+Customer
+register
+login
+logout
+profile
+Farmer
+register
+waiting validation
+login après validation
+Delivery
+compte créé par admin
+Admin
+accès complet
+🌾 PHASE 2 — PRODUCTS
+Tables
+products
+id
+farmer_id
+name
+description
+price
+status
+product_quantity_standards
+id
+product_id
+quantity
+
+Ex :
+
+1kg
+5kg
+10kg
+Features Farmer
+create product
+update product
+delete product
+list own products
+Business Rule
+
+Le client ne peut commander que :
+
+product_quantity_standards
+🌱 PHASE 3 — HARVESTS
+Table
+harvests
+Fields
+id
+product_id
+
+start_date
+end_date
+
+estimated_total_quantity
+
+max_daily_quantity
+
+status
+Business Rules
+Un produit
+1 active harvest max
+Harvest
+
+peut être :
+
+active
+closed
+Features Farmer
+create harvest
+close harvest
+update harvest
+🛒 PHASE 4 — ORDERS
+Tables
+orders
+id
+customer_id
+
+status
+
+total_amount
+order_items
+id
+order_id
+
+product_id
+harvest_id
+
+quantity_standard_id
+
+quantity
+unit_price
+subtotal
+Business Rules
+Vérifier
+Harvest active
+Vérifier
+standard quantity
+Vérifier
+capacity available
+Refuser
+overbooking
+🚚 PHASE 5 — DELIVERY
+Pourquoi ?
+
+C'est le cœur logistique du projet.
+
+Tables
+delivery_groups
+id
+
+delivery_date
+
+zone
+
+status
+
+delivery_user_id
+delivery_group_items
+id
+
+delivery_group_id
+
+order_item_id
+Business Rules
+
+Le système groupe automatiquement :
+
+zone
++
+delivery_date
+Statuts
+planned
+assigned
+in_transit
+delivered
+cancelled
+Features Livreur
+Voir
+tournées assignées
+Démarrer
+livraison
+Confirmer
+livraison terminée
+💳 PHASE 6 — PAYMENTS
+Table
+payments
+Fields
+id
+
+order_id
+
+amount
+
+status
+
+provider
+
+transaction_id
+Status
+pending
+paid
+failed
+refunded
+Features
+paiement en ligne
+confirmation automatique
+👨‍🌾 PHASE 7 — FARMER DASHBOARD
+Produits
+CRUD
+Harvests
+CRUD
+Orders
+
+Voir :
+
+commandes reçues
+Analytics
+
+Voir :
+
+produits populaires
+revenus
+quantités vendues
+👤 PHASE 8 — CUSTOMER DASHBOARD
+Produits
+browse
+Panier
+add
+remove
+Commandes
+historique
+suivi
+Paiements
+historique
+🚛 PHASE 9 — DELIVERY DASHBOARD
+Voir tournées
+Voir commandes
+Mettre à jour statut
+👑 PHASE 10 — ADMIN PANEL
+Validation Farmer
+accepter
+refuser
+Gestion Utilisateurs
+customers
+farmers
+delivery
+Gestion Produits
+Gestion Harvests
+Gestion Orders
+Gestion Deliveries
+Statistiques Globales
+📊 PHASE 11 — REPORTING
+
+Plus tard :
+
+KPI
+Total Orders
+Revenue
+Delivered Orders
+Active Farmers
+🎯 ROADMAP BACKEND RESTANTE
+✅ Fini
+Auth
+Products
+Harvests
+🔥 À faire maintenant
+1
+Orders
+2
+Delivery Engine
+3
+Payments
+4
+Customer Dashboard APIs
+5
+Farmer Dashboard APIs
+6
+Delivery Dashboard APIs
+7
+Admin APIs
+🚀 Backend Completion Roadmap
+
+Ordre recommandé :
+
+feature/orders
+↓
+feature/delivery
+↓
+feature/payments
+↓
+feature/customer-dashboard
+↓
+feature/farmer-dashboard
+↓
+feature/delivery-dashboard
+↓
+feature/admin-panel
