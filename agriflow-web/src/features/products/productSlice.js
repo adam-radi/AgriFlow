@@ -144,13 +144,18 @@ const productSlice = createSlice({
                 // Laravel paginated response wrapped in { data: [...], meta: {...} }
                 if (payload && payload.data && Array.isArray(payload.data)) {
                     state.products = payload.data;
+                    state.pagination.currentPage = payload.meta?.current_page ?? (action.meta?.arg?.page ?? 1);
                     state.pagination.totalItems  = payload.meta?.total      ?? payload.data.length;
                     state.pagination.totalPages  = payload.meta?.last_page  ?? 1;
                 } else if (Array.isArray(payload)) {
                     state.products = payload;
+                    state.pagination.currentPage = action.meta?.arg?.page ?? 1;
+                    state.pagination.totalItems = payload.length;
+                    state.pagination.totalPages = 1;
                 } else {
                     // fallback for other shapes
                     state.products = payload?.results ?? payload?.products ?? payload?.data ?? [];
+                    state.pagination.currentPage = payload?.current_page ?? payload?.meta?.current_page ?? (action.meta?.arg?.page ?? 1);
                     state.pagination.totalItems = payload?.count ?? payload?.total ?? payload?.meta?.total ?? state.products.length;
                     state.pagination.totalPages = payload?.total_pages ?? payload?.meta?.last_page ?? Math.ceil(state.pagination.totalItems / 10);
                 }

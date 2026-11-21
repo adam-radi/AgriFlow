@@ -255,6 +255,17 @@ small, .af-text-small {
   box-shadow: var(--af-shadow-sm);
 }
 
+.af-card-interactive {
+  cursor: pointer;
+  transition: transform var(--af-transition), box-shadow var(--af-transition), border-color var(--af-transition);
+}
+
+.af-card-interactive:hover {
+  transform: translateY(-4px);
+  border-color: var(--af-border-strong);
+  box-shadow: var(--af-shadow-md);
+}
+
 .af-card-header {
   display: flex;
   align-items: flex-start;

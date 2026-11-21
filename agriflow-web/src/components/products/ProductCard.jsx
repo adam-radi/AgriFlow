@@ -3,6 +3,10 @@ import { Link } from "react-router-dom";
 const FALLBACK_PRODUCT_IMAGE =
     "https://images.unsplash.com/photo-1542838132-92c53300491e?w=600&q=80";
 
+/**
+ * ProductCard — Carte produit agricole moderne et responsive
+ * Respecte le Design System AgriFlow (Phase 02 / Phase 03)
+ */
 export default function ProductCard({ product }) {
     if (!product) return null;
 
@@ -13,7 +17,12 @@ export default function ProductCard({ product }) {
         "Exploitation partenaire";
     const farmerZone = product.farmer?.zone || "Maroc";
 
-    // Price calculation
+    const categoryOrVariety =
+        (typeof product.category === "object" ? product.category?.name : product.category) ||
+        product.variety ||
+        "Récolte Directe";
+
+    // Calcul du prix et de son unité
     let displayPrice = null;
     let priceUnit = "l'unité";
 
@@ -36,34 +45,23 @@ export default function ProductCard({ product }) {
             style={{ color: "inherit" }}
         >
             <article
-                className="h-100 d-flex flex-column"
+                className="h-100 d-flex flex-column af-card-interactive"
                 style={{
-                    backgroundColor: "#FFFFFF",
-                    borderRadius: "22px",
-                    border: "1px solid #E2E9E3",
-                    boxShadow: "0 2px 8px rgba(21, 55, 47, 0.04)",
+                    backgroundColor: "var(--af-surface, #FFFFFF)",
+                    borderRadius: "20px",
+                    border: "1px solid var(--af-border, #E2E9E3)",
+                    boxShadow: "var(--af-shadow-sm, 0 1px 3px rgba(21, 55, 47, 0.05))",
                     overflow: "hidden",
-                    transition: "transform 200ms ease, box-shadow 200ms ease, border-color 200ms ease",
-                }}
-                onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = "translateY(-4px)";
-                    e.currentTarget.style.boxShadow = "0 14px 30px rgba(21, 55, 47, 0.09)";
-                    e.currentTarget.style.borderColor = "#CBD7CE";
-                }}
-                onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = "translateY(0)";
-                    e.currentTarget.style.boxShadow = "0 2px 8px rgba(21, 55, 47, 0.04)";
-                    e.currentTarget.style.borderColor = "#E2E9E3";
                 }}
             >
-                {/* Zone Supérieure : Photographie en Arrière-plan */}
+                {/* Zone Supérieure : Photographie & Badges d'état */}
                 <div
                     style={{
                         position: "relative",
                         width: "100%",
                         height: "215px",
                         overflow: "hidden",
-                        backgroundColor: "#E8F2EC",
+                        backgroundColor: "var(--af-green-100, #E8F2EC)",
                     }}
                 >
                     <img
@@ -75,6 +73,7 @@ export default function ProductCard({ product }) {
                             height: "100%",
                             objectFit: "cover",
                             display: "block",
+                            transition: "transform 0.4s ease",
                         }}
                         onError={(e) => {
                             e.target.src = FALLBACK_PRODUCT_IMAGE;
@@ -96,7 +95,7 @@ export default function ProductCard({ product }) {
                         <span
                             className="px-2 py-1 rounded-pill text-white fw-semibold"
                             style={{
-                                backgroundColor: "rgba(21, 55, 47, 0.75)",
+                                backgroundColor: "rgba(21, 55, 47, 0.78)",
                                 backdropFilter: "blur(6px)",
                                 WebkitBackdropFilter: "blur(6px)",
                                 fontSize: "0.72rem",
@@ -110,7 +109,7 @@ export default function ProductCard({ product }) {
                             <span
                                 className="px-2 py-1 rounded-pill text-white fw-semibold"
                                 style={{
-                                    backgroundColor: "rgba(182, 66, 66, 0.9)",
+                                    backgroundColor: "rgba(182, 66, 66, 0.92)",
                                     fontSize: "0.72rem",
                                 }}
                             >
@@ -120,7 +119,7 @@ export default function ProductCard({ product }) {
                             <span
                                 className="px-2 py-1 rounded-pill text-white fw-semibold"
                                 style={{
-                                    backgroundColor: "rgba(36, 122, 80, 0.85)",
+                                    backgroundColor: "rgba(36, 122, 80, 0.88)",
                                     backdropFilter: "blur(6px)",
                                     fontSize: "0.72rem",
                                 }}
@@ -131,24 +130,24 @@ export default function ProductCard({ product }) {
                     </div>
                 </div>
 
-                {/* Zone Inférieure : Zone Blanche d'Informations */}
+                {/* Zone Inférieure : Informations & Détails */}
                 <div className="p-3 d-flex flex-column flex-grow-1">
                     <div className="mb-1">
                         <span
-                            className="text-uppercase fw-semibold"
+                            className="text-uppercase fw-bold"
                             style={{
                                 fontSize: "0.7rem",
-                                color: "#398565",
+                                color: "var(--af-green-700, #398565)",
                                 letterSpacing: "0.05em",
                             }}
                         >
-                            Récolte Directe
+                            {categoryOrVariety}
                         </span>
                         <h3
                             className="fw-bold mb-1 mt-1"
                             style={{
-                                fontSize: "1.1rem",
-                                color: "#15372F",
+                                fontSize: "1.08rem",
+                                color: "var(--af-green-950, #15372F)",
                                 lineHeight: 1.3,
                                 letterSpacing: "-0.015em",
                             }}
@@ -160,7 +159,7 @@ export default function ProductCard({ product }) {
                     <p
                         className="small mb-3"
                         style={{
-                            color: "#68756E",
+                            color: "var(--af-ink-600, #68756E)",
                             lineHeight: 1.5,
                             flex: 1,
                             display: "-webkit-box",
@@ -174,25 +173,25 @@ export default function ProductCard({ product }) {
 
                     <div
                         className="pt-2 border-top d-flex justify-content-between align-items-end"
-                        style={{ borderColor: "#F0F3EF" }}
+                        style={{ borderColor: "var(--af-border, #E2E9E3)" }}
                     >
                         <div>
-                            <span style={{ fontSize: "0.76rem", color: "#68756E", display: "block" }}>
+                            <span style={{ fontSize: "0.76rem", color: "var(--af-ink-600, #68756E)", display: "block" }}>
                                 {farmerName}
                             </span>
                             <div className="d-flex align-items-baseline gap-1 mt-1">
                                 <span
                                     className="fw-bold"
                                     style={{
-                                        fontSize: "1.25rem",
-                                        color: "#194638",
+                                        fontSize: "1.22rem",
+                                        color: "var(--af-green-900, #194638)",
                                         letterSpacing: "-0.02em",
                                     }}
                                 >
                                     {displayPrice ? `${displayPrice} MAD` : "Sur demande"}
                                 </span>
                                 {displayPrice && (
-                                    <span style={{ fontSize: "0.75rem", color: "#68756E" }}>
+                                    <span style={{ fontSize: "0.75rem", color: "var(--af-ink-600, #68756E)" }}>
                                         / {priceUnit}
                                     </span>
                                 )}
@@ -204,8 +203,8 @@ export default function ProductCard({ product }) {
                             style={{
                                 width: "34px",
                                 height: "34px",
-                                backgroundColor: "#E8F2EC",
-                                color: "#194638",
+                                backgroundColor: "var(--af-green-100, #E8F2EC)",
+                                color: "var(--af-green-900, #194638)",
                                 fontSize: "0.95rem",
                                 transition: "all 150ms ease",
                             }}
