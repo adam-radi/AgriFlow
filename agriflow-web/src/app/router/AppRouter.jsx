@@ -5,6 +5,7 @@ import FarmerLayout from "../../layouts/FarmerLayout";
 import PublicLayout from "../../layouts/PublicLayout";
 import AdminLayout from "../../layouts/AdminLayout";
 import ProtectedRoute from "../../components/common/ProtectedRoute";
+import RequireVerificationRoute from "../../components/common/RequireVerificationRoute";
 
 // Auth pages
 import LoginPage from "../../pages/LoginPage";
@@ -47,6 +48,13 @@ import CheckoutPage from "../../pages/client/checkout/CheckoutPage";
 import OrdersPage from "../../pages/client/orders/OrdersPage";
 import OrderDetailsPage from "../../pages/client/orders/OrderDetailsPage";
 
+// Profile & Verification pages
+import FarmerProfilePage from "../../pages/farmer/FarmerProfilePage";
+import FarmerVerificationPage from "../../pages/farmer/FarmerVerificationPage";
+import ClientProfilePage from "../../pages/client/ClientProfilePage";
+import ClientVerificationPage from "../../pages/client/ClientVerificationPage";
+import AdminVerificationsPage from "../../pages/admin/AdminVerificationsPage";
+
 function AppRouter() {
     return (
         <Router>
@@ -79,12 +87,42 @@ function AppRouter() {
                 >
                     <Route path="/farmer/dashboard" element={<FarmerDashboard />} />
                     <Route path="/farmer/products" element={<FarmerProductsPage />} />
-                    <Route path="/farmer/products/new" element={<CreateProductPage />} />
-                    <Route path="/farmer/products/:id/edit" element={<EditProductPage />} />
+                    <Route
+                        path="/farmer/products/new"
+                        element={
+                            <RequireVerificationRoute featureTitle="Ajout de produit" backUrl="/farmer/products">
+                                <CreateProductPage />
+                            </RequireVerificationRoute>
+                        }
+                    />
+                    <Route
+                        path="/farmer/products/:id/edit"
+                        element={
+                            <RequireVerificationRoute featureTitle="Modification de produit" backUrl="/farmer/products">
+                                <EditProductPage />
+                            </RequireVerificationRoute>
+                        }
+                    />
                     <Route path="/farmer/harvests" element={<FarmerHarvestsPage />} />
-                    <Route path="/farmer/harvests/create" element={<CreateHarvestPage />} />
+                    <Route
+                        path="/farmer/harvests/create"
+                        element={
+                            <RequireVerificationRoute featureTitle="Nouvelle récolte" backUrl="/farmer/harvests">
+                                <CreateHarvestPage />
+                            </RequireVerificationRoute>
+                        }
+                    />
                     <Route path="/farmer/harvests/:id" element={<HarvestDetailsPage />} />
-                    <Route path="/farmer/harvests/:id/edit" element={<EditHarvestPage />} />
+                    <Route
+                        path="/farmer/harvests/:id/edit"
+                        element={
+                            <RequireVerificationRoute featureTitle="Modification de récolte" backUrl="/farmer/harvests">
+                                <EditHarvestPage />
+                            </RequireVerificationRoute>
+                        }
+                    />
+                    <Route path="/farmer/profile" element={<FarmerProfilePage />} />
+                    <Route path="/farmer/verification" element={<FarmerVerificationPage />} />
                 </Route>
 
                 {/* ── Admin Dashboard & Management (Protected) ──────── */}
@@ -98,6 +136,7 @@ function AppRouter() {
                     <Route path="/admin" element={<AdminDashboard />} />
                     <Route path="/admin/users" element={<AdminUsersPage />} />
                     <Route path="/admin/farmers" element={<AdminFarmersPage />} />
+                    <Route path="/admin/verifications" element={<AdminVerificationsPage />} />
                     <Route path="/admin/products" element={<AdminProductsPage />} />
                     <Route path="/admin/orders" element={<AdminOrdersPage />} />
                     <Route path="/admin/orders/:id" element={<AdminOrderDetailsPage />} />
@@ -119,6 +158,8 @@ function AppRouter() {
                     <Route path="/client/checkout" element={<CheckoutPage />} />
                     <Route path="/client/orders" element={<OrdersPage />} />
                     <Route path="/client/orders/:id" element={<OrderDetailsPage />} />
+                    <Route path="/client/profile" element={<ClientProfilePage />} />
+                    <Route path="/client/verification" element={<ClientVerificationPage />} />
                 </Route>
 
                 {/* ── Livreur Delivery Routes (Protected) ──────────── */}

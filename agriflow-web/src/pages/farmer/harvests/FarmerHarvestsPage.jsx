@@ -3,6 +3,9 @@ import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 import { Row, Col, Spinner, Alert } from "react-bootstrap";
 import { fetchFarmerHarvests, clearHarvestSuccess, clearHarvestError } from "../../../features/harvests/harvestSlice";
+import { fetchActiveVerification } from "../../../features/verification/verificationSlice";
+import { useVerificationAccess } from "../../../features/verification/useVerificationAccess";
+import VerificationBanner from "../../../components/verification/VerificationBanner";
 import {
     selectFarmerHarvests,
     selectHarvestLoading,
@@ -18,8 +21,11 @@ export default function FarmerHarvestsPage() {
     const error = useSelector(selectHarvestError);
     const success = useSelector(selectHarvestSuccess);
 
+    const { status, canPublish, openModal, VerificationModal } = useVerificationAccess({ accountType: "farmer" });
+
     useEffect(() => {
         dispatch(fetchFarmerHarvests());
+        dispatch(fetchActiveVerification());
     }, [dispatch]);
 
     useEffect(() => {
@@ -31,14 +37,28 @@ export default function FarmerHarvestsPage() {
 
     return (
         <div className="container py-4">
+            {/* ── Verification Banner (Phase 07) ── */}
+            <VerificationBanner status={status} accountType="farmer" />
+
             <div className="d-flex justify-content-between align-items-center mb-4">
                 <div>
                     <h1 className="h3 fw-bold mb-1">My Harvests</h1>
                     <p className="text-muted mb-0">Manage your harvest schedules</p>
                 </div>
-                <Link to="/farmer/harvests/create" className="btn btn-success">
-                    + New Harvest
-                </Link>
+                {canPublish ? (
+                    <Link to="/farmer/harvests/create" className="btn btn-success">
+                        + New Harvest
+                    </Link>
+                ) : (
+                    <button
+                        type="button"
+                        className="btn btn-success"
+                        onClick={() => openModal("la publication de récoltes")}
+                        title="Vérification requise pour publier"
+                    >
+                        + New Harvest 🔒
+                    </button>
+                )}
             </div>
 
             {success && (
@@ -64,9 +84,19 @@ export default function FarmerHarvestsPage() {
                     <div style={{ fontSize: "3rem" }}>🌾</div>
                     <h5 className="mt-3">No harvests yet</h5>
                     <p className="text-muted">Create your first harvest schedule.</p>
-                    <Link to="/farmer/harvests/create" className="btn btn-success">
-                        + Create Harvest
-                    </Link>
+                    {canPublish ? (
+                        <Link to="/farmer/harvests/create" className="btn btn-success">
+                            + Create Harvest
+                        </Link>
+                    ) : (
+                        <button
+                            type="button"
+                            className="btn btn-success"
+                            onClick={() => openModal("la publication de récoltes")}
+                        >
+                            + Create Harvest 🔒
+                        </button>
+                    )}
                 </div>
             )}
 
@@ -79,6 +109,9 @@ export default function FarmerHarvestsPage() {
                     ))}
                 </Row>
             )}
+
+            {/* Verification Modal (Phase 07) */}
+            {VerificationModal}
         </div>
     );
 }

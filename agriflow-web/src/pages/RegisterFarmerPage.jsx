@@ -20,8 +20,6 @@ export default function RegisterFarmerPage() {
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirm, setShowConfirm] = useState(false);
     const [localError, setLocalError] = useState("");
-    const [registered, setRegistered] = useState(false);
-
     const dispatch = useDispatch();
     const navigate = useNavigate();
     const loading = useSelector(selectAuthLoading);
@@ -40,9 +38,8 @@ export default function RegisterFarmerPage() {
         }
         dispatch(registerFarmer(formData)).unwrap()
             .then(() => {
-                // Farmer needs approval - show success then redirect to login
-                setRegistered(true);
-                setTimeout(() => navigate("/login"), 3500);
+                // Redirection immédiate vers le dashboard agriculteur (Phase 07)
+                navigate("/farmer/dashboard");
             })
             .catch(() => {});
     };
@@ -65,21 +62,6 @@ export default function RegisterFarmerPage() {
                 {/* Body */}
                 <div className="auth-body">
 
-                    {registered ? (
-                        <div style={{ textAlign: "center", padding: "1.5rem 0" }}>
-                            <div style={{ fontSize: "3rem", marginBottom: "1rem" }}>🌾</div>
-                            <div className="auth-alert auth-alert-success" style={{ textAlign: "left" }}>
-                                <span>✅</span>
-                                <span>
-                                    <strong>Registration successful!</strong><br />
-                                    Your farmer account is pending admin approval. You'll be able to access your dashboard once approved.
-                                </span>
-                            </div>
-                            <p style={{ fontSize: "0.875rem", color: "var(--agri-muted)", marginTop: "0.5rem" }}>
-                                Redirecting to login...
-                            </p>
-                        </div>
-                    ) : (
                         <>
                             <div className="auth-section-title">
                                 <span>🌾</span> Create a Farmer Account
@@ -211,7 +193,6 @@ export default function RegisterFarmerPage() {
                                 </p>
                             </div>
                         </>
-                    )}
                 </div>
             </div>
         </div>

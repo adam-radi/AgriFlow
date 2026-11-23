@@ -2,6 +2,9 @@ import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 import { fetchFarmerProducts, deleteProduct, clearProductSuccess, clearProductError } from "../../../features/products/productSlice";
+import { fetchActiveVerification } from "../../../features/verification/verificationSlice";
+import { useVerificationAccess } from "../../../features/verification/useVerificationAccess";
+import VerificationBanner from "../../../components/verification/VerificationBanner";
 import {
     selectFarmerProducts,
     selectProductsLoading,
@@ -20,8 +23,11 @@ export default function FarmerProductsPage() {
     const [deletingId, setDeletingId] = useState(null);
     const [confirmId, setConfirmId] = useState(null);
 
+    const { status, canPublish, openModal, VerificationModal } = useVerificationAccess({ accountType: "farmer" });
+
     useEffect(() => {
         dispatch(fetchFarmerProducts());
+        dispatch(fetchActiveVerification());
     }, [dispatch]);
 
     useEffect(() => {
@@ -43,15 +49,31 @@ export default function FarmerProductsPage() {
             <style>{styles}</style>
             <div className="fp-page">
 
+                {/* ── Verification Banner (Phase 07) ── */}
+                <VerificationBanner status={status} accountType="farmer" />
+
                 {/* ── Header ── */}
                 <div className="fp-header">
                     <div>
                         <h1 className="fp-title">My Products</h1>
                         <p className="fp-subtitle">Manage your farm listings</p>
                     </div>
-                    <Link to="/farmer/products/new" className="fp-btn-add" id="add-product-btn">
-                        + Add Product
-                    </Link>
+                    {canPublish ? (
+                        <Link to="/farmer/products/new" className="fp-btn-add" id="add-product-btn">
+                            + Add Product
+                        </Link>
+                    ) : (
+                        <button
+                            type="button"
+                            className="fp-btn-add"
+                            id="add-product-btn"
+                            onClick={() => openModal("la publication de produits")}
+                            title="Vérification requise pour publier"
+                            style={{ cursor: "pointer", opacity: 0.9 }}
+                        >
+                            + Add Product 🔒
+                        </button>
+                    )}
                 </div>
 
                 {/* ── Toast notifications ── */}
@@ -88,9 +110,20 @@ export default function FarmerProductsPage() {
                         <div className="fp-empty-icon">🌱</div>
                         <h2>No products yet</h2>
                         <p>Start listing your farm products for buyers to discover.</p>
-                        <Link to="/farmer/products/new" className="fp-btn-add" id="add-first-product-btn">
-                            + Add Your First Product
-                        </Link>
+                        {canPublish ? (
+                            <Link to="/farmer/products/new" className="fp-btn-add" id="add-first-product-btn">
+                                + Add Your First Product
+                            </Link>
+                        ) : (
+                            <button
+                                type="button"
+                                className="fp-btn-add"
+                                id="add-first-product-btn"
+                                onClick={() => openModal("la publication de produits")}
+                            >
+                                + Add Your First Product 🔒
+                            </button>
+                        )}
                     </div>
                 )}
 
@@ -159,6 +192,9 @@ export default function FarmerProductsPage() {
                         ))}
                     </div>
                 )}
+
+                {/* Verification Modal (Phase 07) */}
+                {VerificationModal}
             </div>
         </>
     );
