@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { Button, Alert } from "react-bootstrap";
+import { Button } from "react-bootstrap";
 import { fetchCart, removeFromCart, updateCartItem, clearCart } from "../../../features/orders/cartSlice";
 import {
     selectCartItems,

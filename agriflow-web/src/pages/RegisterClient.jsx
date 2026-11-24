@@ -105,7 +105,7 @@ export default function RegisterClientPage() {
 
         try {
             await dispatch(registerClient(formData)).unwrap();
-            navigate("/products");
+            navigate("/client/dashboard");
         } catch (err) {
             if (err && typeof err === "object") {
                 const apiFieldErrors = {};

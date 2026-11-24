@@ -1246,3 +1246,345 @@
     display: none;
   }
 }
+
+/* =========================================================
+   5. INTERACTIVE ROLE HEADER & PROFILE DROPDOWN
+   ========================================================= */
+
+.af-header-user-wrapper {
+  position: relative;
+}
+
+.af-header-user-chip-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 4px 10px 4px 14px;
+  margin-left: 6px;
+  border-left: 1px solid var(--af-layout-border-soft);
+  background: transparent;
+  border-top: none;
+  border-right: none;
+  border-bottom: none;
+  cursor: pointer;
+  border-radius: 12px;
+  transition: background 0.2s ease;
+}
+
+.af-header-user-chip-btn:hover {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+.af-header-chevron {
+  color: var(--af-layout-muted);
+  transition: transform 0.2s ease;
+  margin-left: 4px;
+}
+
+.af-header-chevron.is-open {
+  transform: rotate(180deg);
+}
+
+.af-header-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 250px;
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 12px 32px rgba(18, 38, 28, 0.12), 0 2px 8px rgba(0, 0, 0, 0.04);
+  border: 1px solid var(--af-layout-border);
+  padding: 8px;
+  z-index: 250;
+  animation: afDropdownFade 0.18s ease-out;
+}
+
+@keyframes afDropdownFade {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.af-dropdown-user-header {
+  padding: 10px 12px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.af-dropdown-user-header strong {
+  font-size: 14px;
+  color: var(--af-layout-text);
+  font-weight: 700;
+}
+
+.af-dropdown-user-header span {
+  font-size: 12px;
+  color: var(--af-layout-muted);
+  word-break: break-all;
+}
+
+.af-dropdown-verification-badge {
+  display: inline-block;
+  margin-top: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--af-primary-forest);
+  background: #eaf3ec;
+  padding: 2px 8px;
+  border-radius: 999px;
+  width: fit-content;
+}
+
+.af-dropdown-divider {
+  height: 1px;
+  background: var(--af-layout-border-soft);
+  margin: 6px 0;
+}
+
+.af-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  font-size: 13px;
+  font-weight: 550;
+  color: #33473d;
+  text-decoration: none;
+  border-radius: 10px;
+  width: 100%;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: left;
+}
+
+.af-dropdown-item:hover {
+  background: #f4f7f5;
+  color: var(--af-primary-forest);
+}
+
+.af-dropdown-item-danger {
+  color: #c53030;
+}
+
+.af-dropdown-item-danger:hover {
+  background: #fff5f5;
+  color: #9b2c2c;
+}
+
+/* =========================================================
+   6. DASHBOARD LISTS, TABLES & REUSABLE BLOCKS
+   ========================================================= */
+
+.af-dashboard-list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: #f9faf9;
+  border: 1px solid #edf1ee;
+  margin-bottom: 8px;
+  transition: all 0.2s ease;
+}
+
+.af-dashboard-list-item:hover {
+  background: #ffffff;
+  border-color: #dbe3dd;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+}
+
+.af-list-item-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: #eaf3ec;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.af-list-item-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.af-list-item-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--af-layout-text);
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.af-list-item-meta {
+  font-size: 12px;
+  color: var(--af-layout-muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.af-dashboard-table {
+  font-size: 13px;
+}
+
+.af-dashboard-table thead th {
+  color: var(--af-layout-muted);
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid var(--af-layout-border);
+  padding: 12px 14px;
+}
+
+.af-dashboard-table tbody td {
+  padding: 14px;
+  border-bottom: 1px solid #f0f4f1;
+}
+
+/* =========================================================
+   7. QUICK ACTIONS GRID
+   ========================================================= */
+
+.af-quick-actions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 14px;
+}
+
+.af-quick-action-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  background: #ffffff;
+  border: 1px solid #e5ece7;
+  border-radius: 16px;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+}
+
+.af-quick-action-card:hover {
+  border-color: var(--af-primary-agri);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(21, 55, 47, 0.08);
+  background: #fbfdfc;
+}
+
+.af-quick-action-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: #eaf3ec;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.af-quick-action-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--af-layout-text);
+  line-height: 1.3;
+}
+
+.af-quick-action-sub {
+  font-size: 11px;
+  color: var(--af-layout-muted);
+  line-height: 1.3;
+}
+
+/* =========================================================
+   8. BUYER SOURCING & CATEGORY CHIPS
+   ========================================================= */
+
+.af-buyer-search-form {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.af-buyer-search-input-wrap {
+  position: relative;
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+
+.af-buyer-search-input-wrap .af-search-icon {
+  position: absolute;
+  left: 16px;
+  color: #8b9b92;
+  pointer-events: none;
+}
+
+.af-buyer-search-input {
+  width: 100%;
+  padding: 12px 16px 12px 44px;
+  border-radius: var(--af-radius-pill);
+  border: 1px solid #d8e2dc;
+  background: #f6f8f6;
+  font-size: 14px;
+  color: var(--af-layout-text);
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.af-buyer-search-input:focus {
+  background: #ffffff;
+  border-color: var(--af-primary-agri);
+  box-shadow: 0 0 0 3px rgba(57, 133, 101, 0.15);
+}
+
+.af-category-chips-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.af-category-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 14px;
+  border-radius: var(--af-radius-pill);
+  background: #ffffff;
+  border: 1px solid #dce5df;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #3b4e43;
+  text-decoration: none;
+  transition: all 0.18s ease;
+}
+
+.af-category-chip:hover {
+  background: #eaf3ec;
+  border-color: var(--af-primary-agri);
+  color: var(--af-primary-forest);
+  transform: translateY(-1px);
+}
+
+.af-category-chip-icon {
+  font-size: 14px;
+}
+

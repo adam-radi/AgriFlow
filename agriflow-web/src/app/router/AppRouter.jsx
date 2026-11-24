@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import AuthLayout from "../../layouts/AuthLayout";
 import ClientLayout from "../../layouts/ClientLayout";
+import ClientWorkspaceLayout from "../../layouts/ClientWorkspaceLayout";
 import FarmerLayout from "../../layouts/FarmerLayout";
 import PublicLayout from "../../layouts/PublicLayout";
 import AdminLayout from "../../layouts/AdminLayout";
@@ -27,6 +28,9 @@ import FarmerHarvestsPage from "../../pages/farmer/harvests/FarmerHarvestsPage";
 import CreateHarvestPage from "../../pages/farmer/harvests/CreateHarvestPage";
 import EditHarvestPage from "../../pages/farmer/harvests/EditHarvestPage";
 import HarvestDetailsPage from "../../pages/farmer/harvests/HarvestDetailsPage";
+
+// Client pages
+import ClientDashboard from "../../pages/client/ClientDashboard";
 
 // Admin pages
 import AdminDashboard from "../../pages/admin/AdminDashboard";
@@ -146,14 +150,16 @@ function AppRouter() {
                     <Route path="/admin/delivery/groups/:id" element={<DeliveryGroupDetails />} />
                 </Route>
 
-                {/* ── Client Cart & Orders (Protected) ──────────────── */}
+                {/* ── Client Cart, Orders & Workspace (Protected) ────────── */}
                 <Route
                     element={
                         <ProtectedRoute allowedRoles={["Client"]}>
-                            <ClientLayout />
+                            <ClientWorkspaceLayout />
                         </ProtectedRoute>
                     }
                 >
+                    <Route path="/client" element={<Navigate to="/client/dashboard" replace />} />
+                    <Route path="/client/dashboard" element={<ClientDashboard />} />
                     <Route path="/client/cart" element={<CartPage />} />
                     <Route path="/client/checkout" element={<CheckoutPage />} />
                     <Route path="/client/orders" element={<OrdersPage />} />

@@ -5,7 +5,7 @@ import {
     selectAdminProducts,
     selectAdminLoading,
 } from "../../app/store/slices/admin/adminSelectors";
-import { Table, Badge, Button, Spinner, Modal, Form, Image } from "react-bootstrap";
+import { Table, Badge, Button, Spinner, Modal, Form } from "react-bootstrap";
 
 export default function AdminProductsPage() {
     const dispatch = useDispatch();

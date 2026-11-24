@@ -1,17 +1,18 @@
 import { Outlet } from "react-router-dom";
 import { useSelector } from "react-redux";
 import RoleWorkspaceLayout from "./RoleWorkspaceLayout";
+import { selectUser } from "../features/auth/authSelectors";
 
 /**
- * FarmerLayout — Layout de l'espace agriculteur (Phase 05 & 06)
- * Utilise RoleWorkspaceLayout avec design inspiré de la référence visuelle Donezo :
- * Espaces généreux, navbar moderne et aérée, typographie claire et palette AgriFlow.
+ * FarmerLayout — Layout de l'espace agriculteur (Phase 05, 06 & 08)
+ * Utilise RoleWorkspaceLayout avec design inspiré de la référence visuelle AgriFlow :
+ * Espaces généreux, navbar moderne, typographie claire et palette AgriFlow.
  */
 
 const farmerNavigation = [
   {
     type: "section",
-    label: "MENU",
+    label: "EXPLOITATION",
   },
   {
     to: "/farmer/dashboard",
@@ -27,16 +28,6 @@ const farmerNavigation = [
     end: true,
   },
   {
-    to: "/farmer/harvests",
-    label: "Mes récoltes",
-    icon: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-      </svg>
-    ),
-    badge: "12+",
-  },
-  {
     to: "/farmer/products",
     label: "Mes produits",
     icon: (
@@ -46,13 +37,36 @@ const farmerNavigation = [
     ),
   },
   {
+    to: "/farmer/harvests",
+    label: "Mes récoltes",
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+      </svg>
+    ),
+  },
+  {
     to: "/farmer/orders",
-    label: "Commandes",
+    label: "Commandes reçues",
     icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <circle cx="9" cy="21" r="1" />
         <circle cx="20" cy="21" r="1" />
         <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+      </svg>
+    ),
+  },
+  {
+    type: "section",
+    label: "COMPTE & VÉRIFICATION",
+  },
+  {
+    to: "/farmer/verification",
+    label: "Vérification exploitation",
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+        <polyline points="9 12 11 14 15 10" />
       </svg>
     ),
   },
@@ -69,51 +83,29 @@ const farmerNavigation = [
     ),
   },
   {
-    type: "section",
-    label: "GÉNÉRAL",
-  },
-  {
-    to: "/farmer/verification",
-    label: "Vérification compte",
+    to: "/products",
+    label: "Catalogue public",
     icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-        <polyline points="9 12 11 14 15 10" />
-      </svg>
-    ),
-  },
-  {
-    to: "/farmer/profile",
-    label: "Paramètres",
-    icon: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="12" cy="12" r="3" />
-        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+        <circle cx="11" cy="11" r="8" />
+        <line x1="21" y1="21" x2="16.65" y2="16.65" />
       </svg>
     ),
   },
 ];
 
-function FarmerLayout() {
-  const user = useSelector((state) => state.auth?.user);
+export default function FarmerLayout() {
+  const user = useSelector(selectUser);
 
   return (
     <RoleWorkspaceLayout
       brand="AgriFlow"
-      subtitle="Plateforme agricole"
-      roleLabel="Espace Agriculteur"
+      subtitle="Espace Agriculteur"
+      roleLabel="Agriculteur"
       navigationItems={farmerNavigation}
-      pageTitle="Tableau de bord"
-      breadcrumbs={["Accueil", "Agriculteur"]}
-      user={{
-        name: user?.name || "Karim Benali",
-        email: user?.email || "karim.benali@agriflow.ma",
-        roleLabel: "Exploitant agricole",
-      }}
+      user={user}
     >
       <Outlet />
     </RoleWorkspaceLayout>
   );
 }
-
-export default FarmerLayout;

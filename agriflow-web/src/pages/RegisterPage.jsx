@@ -137,7 +137,7 @@ export default function RegisterPage() {
                     password_confirmation: formData.password_confirmation,
                 };
                 await dispatch(registerClient(payload)).unwrap();
-                navigate("/products");
+                navigate("/client/dashboard");
             }
         } catch (err) {
             // Mapping précis des erreurs de validation retournées par l'API Laravel

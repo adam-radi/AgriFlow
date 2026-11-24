@@ -69,7 +69,7 @@ export default function LoginPage() {
         const roleMap = {
             Admin: "/admin",
             Farmer: "/farmer/dashboard",
-            Client: "/products",
+            Client: "/client/dashboard",
             Livreur: "/delivery/dashboard",
         };
         return <Navigate to={roleMap[role] || "/"} replace />;

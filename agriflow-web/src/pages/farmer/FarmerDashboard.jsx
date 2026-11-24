@@ -1,27 +1,37 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 import { fetchFarmerProducts } from "../../features/products/productSlice";
 import { fetchFarmerHarvests } from "../../features/harvests/harvestSlice";
 import { fetchFarmerOrders } from "../../features/orders/orderSlice";
 import { fetchActiveVerification } from "../../features/verification/verificationSlice";
-import { selectFarmerProducts } from "../../features/products/productSelectors";
-import { selectFarmerHarvests } from "../../features/harvests/harvestSelectors";
-import { selectOrders } from "../../features/orders/orderSelectors";
+import { selectFarmerProducts, selectProductsLoading } from "../../features/products/productSelectors";
+import { selectFarmerHarvests, selectHarvestLoading } from "../../features/harvests/harvestSelectors";
+import { selectOrders, selectOrdersLoading } from "../../features/orders/orderSelectors";
+import { selectUser } from "../../features/auth/authSelectors";
 import { useVerificationAccess } from "../../features/verification/useVerificationAccess";
 import VerificationBanner from "../../components/verification/VerificationBanner";
+import { EmptyState, LoadingState, Badge } from "../../components/common";
 
+/**
+ * FarmerDashboard — Espace officiel de pilotage de l'agriculteur (Phase 08)
+ * Connecté strictement aux données réelles de l'exploitation : produits, récoltes, commandes et vérification.
+ * Respecte les permissions de la Phase 07 et ne contient aucune statistique fictive.
+ */
 export default function FarmerDashboard() {
   const dispatch = useDispatch();
-  const products = useSelector(selectFarmerProducts);
-  const harvests = useSelector(selectFarmerHarvests);
-  const orders = useSelector(selectOrders);
 
-  const { status, canPublish, openModal, VerificationModal } = useVerificationAccess({ accountType: "farmer" });
+  const user = useSelector(selectUser);
+  const products = useSelector(selectFarmerProducts) || [];
+  const harvests = useSelector(selectFarmerHarvests) || [];
+  const orders = useSelector(selectOrders) || [];
 
-  // Time tracker interactive state (matching Time Tracker widget)
-  const [seconds, setSeconds] = useState(5048); // 01:24:08
-  const [isRunning, setIsRunning] = useState(true);
+  const productsLoading = useSelector(selectProductsLoading);
+  const harvestsLoading = useSelector(selectHarvestLoading);
+  const ordersLoading = useSelector(selectOrdersLoading);
+
+  const { status, canPublish, openModal, VerificationModal, isApproved } =
+    useVerificationAccess({ accountType: "farmer" });
 
   useEffect(() => {
     dispatch(fetchFarmerProducts());
@@ -30,617 +40,546 @@ export default function FarmerDashboard() {
     dispatch(fetchActiveVerification());
   }, [dispatch]);
 
-  // Digital clock timer tick
-  useEffect(() => {
-    let interval = null;
-    if (isRunning) {
-      interval = setInterval(() => {
-        setSeconds((prev) => prev + 1);
-      }, 1000);
-    }
-    return () => clearInterval(interval);
-  }, [isRunning]);
+  // Derived real metrics
+  const totalProductsCount = products.length;
+  const availableProductsCount = products.filter(
+    (p) => p.is_available !== false
+  ).length;
+  const totalHarvestsCount = harvests.length;
+  const activeHarvestsCount = harvests.filter(
+    (h) => h.status === "in_progress" || h.status === "ready"
+  ).length;
+  const totalOrdersCount = orders.length;
+  const completedOrdersCount = orders.filter(
+    (o) => o.status === "completed" || o.status === "delivered"
+  ).length;
 
-  const formatTimer = (totalSec) => {
-    const hrs = Math.floor(totalSec / 3600);
-    const mins = Math.floor((totalSec % 3600) / 60);
-    const secs = totalSec % 60;
-    return `${hrs.toString().padStart(2, "0")}:${mins
-      .toString()
-      .padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
-  };
-
-  // Metrics (computed from real store, fallback to visually rich values)
-  const totalHarvestsCount = harvests.length > 0 ? harvests.length : 24;
-  const completedOrdersCount =
-    orders.filter((o) => o.status === "completed" || o.status === "delivered")
-      .length || 10;
-  const runningHarvestsCount =
-    harvests.filter((h) => h.status === "in_progress" || h.status === "ready")
-      .length || 12;
-  const pendingOrdersCount =
-    orders.filter((o) => o.status === "pending").length || 2;
-
-  // Recent products list (uses real products if available, fallback to rich defaults)
-  const recentProductsList =
-    products.length > 0
-      ? products.slice(0, 5).map((p, idx) => ({
-          id: p.id || `p-${idx}`,
-          name: p.name || `Produit #${idx + 1}`,
-          date: p.is_available !== false ? "En stock" : "Épuisé",
-          badge: `${p.price || 45} DH / kg`,
-          icon: idx % 2 === 0 ? "🍅" : "🫒",
-          color: idx % 2 === 0 ? "#fee2e2" : "#e8f5e9",
-        }))
-      : [
-          {
-            id: "p-1",
-            name: "Tomates Cerises Bio",
-            date: "Échéance : 26 Nov 2024",
-            badge: "120 caisses",
-            icon: "🍅",
-            color: "#fee2e2",
-          },
-          {
-            id: "p-2",
-            name: "Olives Picholine",
-            date: "Échéance : 28 Nov 2024",
-            badge: "500 kg",
-            icon: "🫒",
-            color: "#e8f5e9",
-          },
-          {
-            id: "p-3",
-            name: "Oranges Valencia",
-            date: "Échéance : 30 Nov 2024",
-            badge: "300 caisses",
-            icon: "🍊",
-            color: "#ffedd5",
-          },
-          {
-            id: "p-4",
-            name: "Pommes de Terre Spunta",
-            date: "Échéance : 05 Déc 2024",
-            badge: "1.2 Tonnes",
-            icon: "🥔",
-            color: "#fef3c7",
-          },
-          {
-            id: "p-5",
-            name: "Menthe & Aromatiques",
-            date: "Échéance : 06 Déc 2024",
-            badge: "Prêt",
-            icon: "🌿",
-            color: "#ccfbf1",
-          },
-        ];
-
-  // Collaborations / Buyer orders
-  const buyerOrdersList = [
-    {
-      id: "b-1",
-      buyer: "Alexandra Deff — Épicerie Bab Doukkala",
-      task: "Commande #ORD-1042 · 40 caisses Tomates",
-      status: "completed",
-      statusLabel: "Livré",
-      avatarBg: "#2563eb",
-      initials: "AD",
-    },
-    {
-      id: "b-2",
-      buyer: "Edwin Adenike — Marché Central Marrakech",
-      task: "Commande #ORD-1043 · 150 kg Olives vertes",
-      status: "progress",
-      statusLabel: "En cours",
-      avatarBg: "#16a34a",
-      initials: "EA",
-    },
-    {
-      id: "b-3",
-      buyer: "Isaac Oluwatemilorun — Superette Al Amal",
-      task: "Commande #ORD-1044 · 80 caisses Oranges",
-      status: "pending",
-      statusLabel: "En attente",
-      avatarBg: "#ea580c",
-      initials: "IO",
-    },
-    {
-      id: "b-4",
-      buyer: "David Oshodi — Hôtel & Riad Fès",
-      task: "Commande #ORD-1045 · 25 L Huile d'olive extra",
-      status: "progress",
-      statusLabel: "En cours",
-      avatarBg: "#0d9488",
-      initials: "DO",
-    },
-  ];
+  const displayName = user?.name || "Agriculteur";
 
   return (
     <div className="af-dashboard-container">
-      {/* 1. Header Row (Dashboard Title + Action Pills) */}
+      {/* ── 1. Welcome Section ────────────────────────────────────────── */}
       <div className="af-dashboard-header-row">
         <div className="af-dashboard-title-group">
-          <h1>Tableau de bord</h1>
+          <div className="d-flex align-items-center gap-2 mb-1 flex-wrap">
+            <h1>Bonjour, {displayName} 👋</h1>
+            {isApproved ? (
+              <Badge variant="success" size="md">
+                Exploitation vérifiée ✓
+              </Badge>
+            ) : status === "pending" ? (
+              <Badge variant="warning" size="md">
+                Vérification en attente ⏳
+              </Badge>
+            ) : (
+              <Badge variant="neutral" size="md">
+                Compte non certifié
+              </Badge>
+            )}
+          </div>
           <p>
-            Suivez, planifiez et gérez vos récoltes et commandes agricoles en toute simplicité.
+            Pilotez vos productions agricoles, vos récoltes prévisionnelles et vos ventes directes aux acheteurs professionnels.
           </p>
         </div>
 
+        {/* Action Pills */}
         <div className="af-dashboard-actions">
           {canPublish ? (
-            <Link to="/farmer/harvests/create" className="af-btn-primary-pill">
-              <svg
-                width="15"
-                height="15"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
+            <Link to="/farmer/products/new" className="af-btn-primary-pill">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                 <line x1="12" y1="5" x2="12" y2="19" />
                 <line x1="5" y1="12" x2="19" y2="12" />
               </svg>
-              Nouvelle récolte
+              Ajouter un produit
             </Link>
           ) : (
             <button
               type="button"
               className="af-btn-primary-pill"
-              onClick={() => openModal("la création et publication de récoltes")}
+              onClick={() => openModal("l'ajout et la publication de produits agricoles")}
               title="Vérification requise pour publier"
             >
-              <svg
-                width="15"
-                height="15"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                 <line x1="12" y1="5" x2="12" y2="19" />
                 <line x1="5" y1="12" x2="19" y2="12" />
               </svg>
-              Nouvelle récolte
+              Ajouter un produit
               <span style={{ fontSize: "0.85em", marginLeft: "4px" }}>🔒</span>
             </button>
           )}
 
-          <button
-            type="button"
-            className="af-btn-secondary-pill"
-            onClick={() => alert("Exportation des données agricoles en cours...")}
-          >
-            <svg
-              width="15"
-              height="15"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
+          {canPublish ? (
+            <Link to="/farmer/harvests/create" className="af-btn-secondary-pill">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
+              Planifier une récolte
+            </Link>
+          ) : (
+            <button
+              type="button"
+              className="af-btn-secondary-pill"
+              onClick={() => openModal("la planification de récoltes")}
+              title="Vérification requise pour planifier"
             >
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-              <polyline points="7 10 12 15 17 10" />
-              <line x1="12" y1="15" x2="12" y2="3" />
-            </svg>
-            Exporter rapport
-          </button>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
+              Planifier une récolte
+              <span style={{ fontSize: "0.85em", marginLeft: "4px" }}>🔒</span>
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Verification Status Indicator Banner (Phase 07) */}
+      {/* ── 2. Verification Status Banner (Phase 07) ─────────────────── */}
       <VerificationBanner status={status} accountType="farmer" />
 
-      {/* 2. Top Stats Row (4 Stat Cards with circular ↗ button) */}
+      {/* ── 3. Overview Real Metrics ─────────────────────────────────── */}
       <div className="af-stats-row">
-        {/* Card 1: Featured Dark Green Card */}
+        {/* Card 1: Total Produits */}
         <div className="af-stat-card-featured">
           <div className="af-stat-card-top">
-            <span className="af-stat-card-label">Total Récoltes</span>
+            <span className="af-stat-card-label">Total Produits</span>
+            <Link
+              to="/farmer/products"
+              className="af-stat-arrow-btn"
+              aria-label="Voir mes produits"
+            >
+              ↗
+            </Link>
+          </div>
+          <div className="af-stat-value">{totalProductsCount}</div>
+          <div className="af-stat-pill">
+            <span>{availableProductsCount}</span> actifs en catalogue
+          </div>
+        </div>
+
+        {/* Card 2: Récoltes enregistrées */}
+        <div className="af-stat-card-white">
+          <div className="af-stat-card-top">
+            <span className="af-stat-card-label">Mes Récoltes</span>
             <Link
               to="/farmer/harvests"
               className="af-stat-arrow-btn"
-              aria-label="Voir toutes les récoltes"
+              aria-label="Voir mes récoltes"
             >
               ↗
             </Link>
           </div>
           <div className="af-stat-value">{totalHarvestsCount}</div>
-          <div className="af-stat-pill">
-            <span>5 ↑</span> +18% ce mois-ci
-          </div>
-        </div>
-
-        {/* Card 2: Ended / Completed Projects */}
-        <div className="af-stat-card-white">
-          <div className="af-stat-card-top">
-            <span className="af-stat-card-label">Commandes Livrées</span>
-            <Link
-              to="/farmer/orders"
-              className="af-stat-arrow-btn"
-              aria-label="Voir les commandes livrées"
-            >
-              ↗
-            </Link>
-          </div>
-          <div className="af-stat-value">{completedOrdersCount}</div>
           <div className="af-stat-pill success">
-            <span>6 ↑</span> +12% ce mois-ci
+            <span>{activeHarvestsCount}</span> en cours ou prêtes
           </div>
         </div>
 
-        {/* Card 3: Running Projects */}
+        {/* Card 3: Commandes reçues */}
         <div className="af-stat-card-white">
           <div className="af-stat-card-top">
-            <span className="af-stat-card-label">Récoltes En Cours</span>
-            <Link
-              to="/farmer/harvests"
-              className="af-stat-arrow-btn"
-              aria-label="Voir les récoltes en cours"
-            >
-              ↗
-            </Link>
-          </div>
-          <div className="af-stat-value">{runningHarvestsCount}</div>
-          <div className="af-stat-pill neutral">
-            <span>2 ↑</span> 4 prêtes à cueillir
-          </div>
-        </div>
-
-        {/* Card 4: Pending Projects */}
-        <div className="af-stat-card-white">
-          <div className="af-stat-card-top">
-            <span className="af-stat-card-label">En Négociation</span>
+            <span className="af-stat-card-label">Commandes Reçues</span>
             <Link
               to="/farmer/orders"
               className="af-stat-arrow-btn"
-              aria-label="Voir les négociations"
+              aria-label="Voir les commandes"
             >
               ↗
             </Link>
           </div>
-          <div className="af-stat-value">{pendingOrdersCount}</div>
-          <span className="af-stat-subtitle-text">En attente acheteur</span>
-        </div>
-      </div>
-
-      {/* 3. Middle Grid (Analytics Bar Chart + Reminders + Recent Products) */}
-      <div className="af-grid-3cols">
-        {/* Column 1: Project Analytics (Pill Bar Chart with stripes & 74% chip) */}
-        <div className="af-panel-card">
-          <div className="af-panel-header">
-            <h2 className="af-panel-title">Analyses d&apos;Activité</h2>
-            <span className="af-stat-subtitle-text">Volume / Jour</span>
-          </div>
-
-          <div className="af-barchart-container">
-            <div className="af-barchart-bars">
-              {/* Sun (Striped) */}
-              <div className="af-bar-col">
-                <div
-                  className="af-bar-pill af-bar-striped"
-                  style={{ height: "42%" }}
-                />
-                <span className="af-bar-label">D</span>
-              </div>
-
-              {/* Mon (Deep Green) */}
-              <div className="af-bar-col">
-                <div
-                  className="af-bar-pill af-bar-solid-deep"
-                  style={{ height: "68%" }}
-                />
-                <span className="af-bar-label">L</span>
-              </div>
-
-              {/* Tue (Agri Green + Tooltip chip) */}
-              <div className="af-bar-col">
-                <span className="af-bar-tooltip-chip">74%</span>
-                <div
-                  className="af-bar-pill af-bar-solid-agri"
-                  style={{ height: "86%" }}
-                />
-                <span className="af-bar-label">M</span>
-              </div>
-
-              {/* Wed (Solid Deep Green Peak) */}
-              <div className="af-bar-col">
-                <div
-                  className="af-bar-pill af-bar-solid-deep"
-                  style={{ height: "94%" }}
-                />
-                <span className="af-bar-label">M</span>
-              </div>
-
-              {/* Thu (Striped) */}
-              <div className="af-bar-col">
-                <div
-                  className="af-bar-pill af-bar-striped"
-                  style={{ height: "52%" }}
-                />
-                <span className="af-bar-label">J</span>
-              </div>
-
-              {/* Fri (Striped) */}
-              <div className="af-bar-col">
-                <div
-                  className="af-bar-pill af-bar-striped"
-                  style={{ height: "40%" }}
-                />
-                <span className="af-bar-label">V</span>
-              </div>
-
-              {/* Sat (Striped) */}
-              <div className="af-bar-col">
-                <div
-                  className="af-bar-pill af-bar-striped"
-                  style={{ height: "64%" }}
-                />
-                <span className="af-bar-label">S</span>
-              </div>
-            </div>
+          <div className="af-stat-value">{totalOrdersCount}</div>
+          <div className="af-stat-pill neutral">
+            <span>{completedOrdersCount}</span> livrées avec succès
           </div>
         </div>
 
-        {/* Column 2: Reminders Card */}
-        <div className="af-panel-card">
-          <div className="af-panel-header">
-            <h2 className="af-panel-title">Rappels & Livraisons</h2>
-          </div>
-
-          <div className="af-reminder-box">
-            <div>
-              <h3 className="af-reminder-event-title">
-                Livraison Coopérative Souss
-              </h3>
-              <p className="af-reminder-time">
-                <svg
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <circle cx="12" cy="12" r="10" />
-                  <polyline points="12 6 12 12 16 14" />
-                </svg>
-                Aujourd&apos;hui : 14h00 – 16h00
-              </p>
-            </div>
-
-            <button
-              type="button"
-              className="af-btn-reminder-action"
-              onClick={() => alert("Ouverture du suivi logistique de la livraison...")}
+        {/* Card 4: Statut du dossier */}
+        <div className="af-stat-card-white">
+          <div className="af-stat-card-top">
+            <span className="af-stat-card-label">Dossier B2B</span>
+            <Link
+              to="/farmer/verification"
+              className="af-stat-arrow-btn"
+              aria-label="Consulter ma vérification"
             >
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <polygon points="23 7 16 12 23 17 23 7" />
-                <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
-              </svg>
-              Session Coordination
-            </button>
-
-            <div className="af-reminder-subitem">
-              <div className="af-reminder-subitem-icon">📦</div>
-              <div className="af-reminder-subitem-text">
-                <strong>Contrôle qualité récolte</strong>
-                <span>Demain à 09h30 · Hangar A</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Column 3: Recent Products (Project) */}
-        <div className="af-panel-card">
-          <div className="af-panel-header">
-            <h2 className="af-panel-title">Produits Récents</h2>
-            {canPublish ? (
-              <Link to="/farmer/products/new" className="af-pill-link-btn">
-                + Nouveau
-              </Link>
-            ) : (
-              <button
-                type="button"
-                className="af-pill-link-btn"
-                onClick={() => openModal("la création de produits")}
-                title="Vérification requise pour publier"
-                style={{ cursor: "pointer" }}
-              >
-                + Nouveau 🔒
-              </button>
-            )}
-          </div>
-
-          <div className="af-recent-list">
-            {recentProductsList.map((item) => (
-              <div key={item.id} className="af-recent-item">
-                <div
-                  className="af-recent-icon"
-                  style={{ backgroundColor: item.color }}
-                >
-                  {item.icon}
-                </div>
-                <div className="af-recent-info">
-                  <span className="af-recent-name">{item.name}</span>
-                  <span className="af-recent-date">
-                    {item.date} · {item.badge}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* 4. Bottom Grid (Team Collaboration + Progress Donut + Time Tracker) */}
-      <div className="af-grid-3cols">
-        {/* Column 1: Team Collaboration / Buyer Orders */}
-        <div className="af-panel-card">
-          <div className="af-panel-header">
-            <h2 className="af-panel-title">Commandes & Acheteurs</h2>
-            <Link to="/farmer/orders" className="af-pill-link-btn">
-              + Nouvelle vente
+              ↗
             </Link>
           </div>
+          <div className="af-stat-value" style={{ fontSize: "20px", marginTop: "4px" }}>
+            {isApproved
+              ? "Approuvé"
+              : status === "pending"
+              ? "En examen"
+              : status === "rejected"
+              ? "Rejeté"
+              : "À compléter"}
+          </div>
+          <span className="af-stat-subtitle-text">
+            {isApproved
+              ? "Publication illimitée"
+              : "Dossier légal exploitation"}
+          </span>
+        </div>
+      </div>
 
-          <div className="af-collab-list">
-            {buyerOrdersList.map((order) => (
-              <div key={order.id} className="af-collab-item">
-                <div
-                  className="af-collab-avatar"
-                  style={{ backgroundColor: order.avatarBg }}
-                >
-                  {order.initials}
-                </div>
-                <div className="af-collab-content">
-                  <span className="af-collab-name">{order.buyer}</span>
-                  <span className="af-collab-task">{order.task}</span>
-                </div>
-                <span className={`af-status-pill ${order.status}`}>
-                  {order.statusLabel}
+      {/* ── 4. Main Two-Column Grid: Produits & Récoltes ─────────────── */}
+      <div className="row g-4">
+        {/* Colonne Gauche : Mes Produits Agricoles */}
+        <div className="col-12 col-lg-7">
+          <div className="af-panel-card h-100">
+            <div className="af-panel-header">
+              <div>
+                <h2 className="af-panel-title">Mes Produits Agricoles</h2>
+                <span className="af-stat-subtitle-text">
+                  Catalogue direct ({totalProductsCount} produit{totalProductsCount > 1 ? "s" : ""})
                 </span>
               </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Column 2: Project Progress (Semi Donut Gauge) */}
-        <div className="af-panel-card">
-          <div className="af-panel-header">
-            <h2 className="af-panel-title">Progression des Ventes</h2>
-          </div>
-
-          <div className="af-gauge-container">
-            <div className="af-gauge-wrapper">
-              <svg viewBox="0 0 160 100" width="160" height="100">
-                {/* Background arc */}
-                <path
-                  d="M 20 90 A 60 60 0 0 1 140 90"
-                  fill="none"
-                  stroke="#E8EDE9"
-                  strokeWidth="18"
-                  strokeLinecap="round"
-                />
-                {/* Progress arc (41% or 74%) */}
-                <path
-                  d="M 20 90 A 60 60 0 0 1 140 90"
-                  fill="none"
-                  stroke="url(#progressGradient)"
-                  strokeWidth="18"
-                  strokeDasharray="188.5"
-                  strokeDashoffset="75"
-                  strokeLinecap="round"
-                />
-                <defs>
-                  <linearGradient
-                    id="progressGradient"
-                    x1="0%"
-                    y1="0%"
-                    x2="100%"
-                    y2="0%"
+              <div className="d-flex align-items-center gap-2">
+                <Link to="/farmer/products" className="af-pill-link-btn">
+                  Voir tout
+                </Link>
+                {canPublish ? (
+                  <Link to="/farmer/products/new" className="af-pill-link-btn primary">
+                    + Nouveau
+                  </Link>
+                ) : (
+                  <button
+                    type="button"
+                    className="af-pill-link-btn"
+                    onClick={() => openModal("l'ajout de produits")}
                   >
-                    <stop offset="0%" stopColor="#15372F" />
-                    <stop offset="100%" stopColor="#398565" />
-                  </linearGradient>
-                </defs>
-              </svg>
-
-              <div className="af-gauge-center-text">
-                <div className="af-gauge-percent">41%</div>
-                <div className="af-gauge-caption">Objectif Atteint</div>
+                    + Nouveau 🔒
+                  </button>
+                )}
               </div>
             </div>
 
-            <div className="af-gauge-legend">
-              <div>
-                <span
-                  className="af-legend-dot"
-                  style={{ backgroundColor: "#15372F" }}
-                />
-                Livré
+            {productsLoading && products.length === 0 ? (
+              <LoadingState message="Chargement de vos produits..." />
+            ) : products.length > 0 ? (
+              <div className="af-product-list">
+                {products.slice(0, 5).map((product) => (
+                  <div key={product.id} className="af-dashboard-list-item">
+                    <div className="af-list-item-avatar">
+                      {product.image_url ? (
+                        <img
+                          src={product.image_url}
+                          alt={product.name}
+                          style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "10px" }}
+                        />
+                      ) : (
+                        <span>🌿</span>
+                      )}
+                    </div>
+                    <div className="af-list-item-content">
+                      <div className="af-list-item-title">{product.name}</div>
+                      <div className="af-list-item-meta">
+                        <span>{product.category?.name || product.category || "Produit agricole"}</span>
+                        <span>·</span>
+                        <strong style={{ color: "var(--af-primary-forest)" }}>
+                          {product.price} DH / {product.unit || "kg"}
+                        </strong>
+                      </div>
+                    </div>
+                    <div className="d-flex align-items-center gap-2">
+                      <Badge
+                        variant={product.is_available !== false ? "success" : "neutral"}
+                        size="sm"
+                      >
+                        {product.is_available !== false ? "En stock" : "Épuisé"}
+                      </Badge>
+                      {canPublish && (
+                        <Link
+                          to={`/farmer/products/${product.id}/edit`}
+                          className="btn btn-sm btn-outline-secondary rounded-pill py-0 px-2"
+                          style={{ fontSize: "0.78rem" }}
+                          title="Modifier le produit"
+                        >
+                          Modifier
+                        </Link>
+                      )}
+                    </div>
+                  </div>
+                ))}
               </div>
-              <div>
-                <span
-                  className="af-legend-dot"
-                  style={{ backgroundColor: "#398565" }}
-                />
-                En cours
-              </div>
-              <div>
-                <span
-                  className="af-legend-dot"
-                  style={{ backgroundColor: "#D8DFDA" }}
-                />
-                En attente
-              </div>
-            </div>
+            ) : (
+              <EmptyState
+                icon="🌱"
+                title="Aucun produit publié"
+                description="Vous n'avez pas encore de produit dans votre catalogue. Ajoutez vos productions pour les rendre visibles aux acheteurs professionnels."
+                action={
+                  canPublish ? (
+                    <Link to="/farmer/products/new" className="af-btn-primary-pill">
+                      Ajouter mon premier produit
+                    </Link>
+                  ) : (
+                    <button
+                      type="button"
+                      className="af-btn-primary-pill"
+                      onClick={() => openModal("la création de produits")}
+                    >
+                      Ajouter mon premier produit 🔒
+                    </button>
+                  )
+                }
+              />
+            )}
           </div>
         </div>
 
-        {/* Column 3: Live Market Time Tracker (Dark Forest Green Wave Card) */}
-        <div className="af-market-card">
-          <div className="af-market-header">Session de Marché</div>
+        {/* Colonne Droite : Mes Récoltes & Prévisions */}
+        <div className="col-12 col-lg-5">
+          <div className="af-panel-card h-100">
+            <div className="af-panel-header">
+              <div>
+                <h2 className="af-panel-title">Mes Récoltes</h2>
+                <span className="af-stat-subtitle-text">
+                  Calendrier de production ({totalHarvestsCount})
+                </span>
+              </div>
+              <div className="d-flex align-items-center gap-2">
+                <Link to="/farmer/harvests" className="af-pill-link-btn">
+                  Voir tout
+                </Link>
+                {canPublish ? (
+                  <Link to="/farmer/harvests/create" className="af-pill-link-btn primary">
+                    + Planifier
+                  </Link>
+                ) : (
+                  <button
+                    type="button"
+                    className="af-pill-link-btn"
+                    onClick={() => openModal("la planification de récoltes")}
+                  >
+                    + Planifier 🔒
+                  </button>
+                )}
+              </div>
+            </div>
 
-          <div className="af-market-timer" aria-live="polite">
-            {formatTimer(seconds)}
-          </div>
-
-          <div className="af-market-controls">
-            <button
-              type="button"
-              className="af-market-btn pause"
-              onClick={() => setIsRunning(!isRunning)}
-              aria-label={isRunning ? "Mettre en pause" : "Reprendre"}
-              title={isRunning ? "Mettre en pause" : "Reprendre"}
-            >
-              {isRunning ? (
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                  <rect x="6" y="4" width="4" height="16" rx="1" />
-                  <rect x="14" y="4" width="4" height="16" rx="1" />
-                </svg>
-              ) : (
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                  <polygon points="5 3 19 12 5 21 5 3" />
-                </svg>
-              )}
-            </button>
-
-            <button
-              type="button"
-              className="af-market-btn stop"
-              onClick={() => {
-                setIsRunning(false);
-                setSeconds(0);
-              }}
-              aria-label="Arrêter la session"
-              title="Arrêter la session"
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                <rect x="4" y="4" width="16" height="16" rx="2" />
-              </svg>
-            </button>
+            {harvestsLoading && harvests.length === 0 ? (
+              <LoadingState message="Chargement de vos récoltes..." />
+            ) : harvests.length > 0 ? (
+              <div className="af-harvest-list">
+                {harvests.slice(0, 5).map((harvest) => (
+                  <div key={harvest.id} className="af-dashboard-list-item">
+                    <div className="af-list-item-avatar" style={{ backgroundColor: "#eaf3ec", color: "#194638" }}>
+                      🌾
+                    </div>
+                    <div className="af-list-item-content">
+                      <div className="af-list-item-title">
+                        {harvest.product_name || harvest.name || `Récolte #${harvest.id}`}
+                      </div>
+                      <div className="af-list-item-meta">
+                        <span>Quantité : {harvest.estimated_quantity || harvest.quantity || "—"} {harvest.unit || "kg"}</span>
+                        <span>·</span>
+                        <span>
+                          {harvest.harvest_date
+                            ? new Date(harvest.harvest_date).toLocaleDateString("fr-FR", {
+                                day: "numeric",
+                                month: "short",
+                              })
+                            : "Date à préciser"}
+                        </span>
+                      </div>
+                    </div>
+                    <Badge
+                      variant={
+                        harvest.status === "ready"
+                          ? "success"
+                          : harvest.status === "in_progress"
+                          ? "info"
+                          : "neutral"
+                      }
+                      size="sm"
+                    >
+                      {harvest.status === "ready"
+                        ? "Prête"
+                        : harvest.status === "in_progress"
+                        ? "En cours"
+                        : harvest.status || "Planifiée"}
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <EmptyState
+                icon="🚜"
+                title="Aucune récolte enregistrée"
+                description="Planifiez vos cycles de culture pour informer les acheteurs de vos volumes prévisionnels et recevoir des précommandes."
+                action={
+                  canPublish ? (
+                    <Link to="/farmer/harvests/create" className="af-btn-primary-pill">
+                      Planifier une récolte
+                    </Link>
+                  ) : (
+                    <button
+                      type="button"
+                      className="af-btn-primary-pill"
+                      onClick={() => openModal("la planification de récoltes")}
+                    >
+                      Planifier une récolte 🔒
+                    </button>
+                  )
+                }
+              />
+            )}
           </div>
         </div>
       </div>
 
-      {/* Verification Required Informative Modal (Phase 07) */}
+      {/* ── 5. Activité Récente & Commandes reçues ────────────────────── */}
+      <div className="af-panel-card">
+        <div className="af-panel-header">
+          <div>
+            <h2 className="af-panel-title">Commandes d&apos;Acheteurs Reçues</h2>
+            <span className="af-stat-subtitle-text">
+              Historique des demandes d&apos;approvisionnement directes
+            </span>
+          </div>
+          <Link to="/farmer/orders" className="af-pill-link-btn">
+            Toutes les commandes ({totalOrdersCount})
+          </Link>
+        </div>
+
+        {ordersLoading && orders.length === 0 ? (
+          <LoadingState message="Chargement des commandes..." />
+        ) : orders.length > 0 ? (
+          <div className="table-responsive">
+            <table className="table align-middle af-dashboard-table mb-0">
+              <thead>
+                <tr>
+                  <th>N° Commande</th>
+                  <th>Acheteur / Zone</th>
+                  <th>Articles</th>
+                  <th>Montant</th>
+                  <th>Statut</th>
+                  <th className="text-end">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {orders.slice(0, 5).map((order) => (
+                  <tr key={order.id}>
+                    <td>
+                      <strong>#{order.id}</strong>
+                    </td>
+                    <td>
+                      <div>{order.client_name || order.user?.name || "Acheteur Pro"}</div>
+                      <small className="text-muted">{order.shipping_zone || order.city || "Maroc"}</small>
+                    </td>
+                    <td>{order.items?.length || 1} article(s)</td>
+                    <td>
+                      <strong style={{ color: "var(--af-primary-forest)" }}>
+                        {order.total ? `${Number(order.total).toLocaleString()} DH` : "—"}
+                      </strong>
+                    </td>
+                    <td>
+                      <Badge
+                        variant={
+                          order.status === "delivered" || order.status === "completed"
+                            ? "success"
+                            : order.status === "in_delivery" || order.status === "processing"
+                            ? "info"
+                            : "warning"
+                        }
+                        size="sm"
+                      >
+                        {order.status === "delivered"
+                          ? "Livrée"
+                          : order.status === "in_delivery"
+                          ? "En livraison"
+                          : order.status === "processing"
+                          ? "En préparation"
+                          : order.status === "pending"
+                          ? "En attente"
+                          : order.status}
+                      </Badge>
+                    </td>
+                    <td className="text-end">
+                      <Link
+                        to={`/farmer/orders`}
+                        className="btn btn-sm btn-outline-secondary rounded-pill px-3"
+                      >
+                        Détails
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <EmptyState
+            icon="📦"
+            title="Aucune commande pour l'instant"
+            description="Dès qu'un acheteur professionnel passe commande pour l'un de vos produits ou récoltes, celle-ci s'affichera directement ici."
+            action={
+              <Link to="/products" className="af-btn-secondary-pill">
+                Consulter le catalogue public
+              </Link>
+            }
+          />
+        )}
+      </div>
+
+      {/* ── 6. Actions Rapides ────────────────────────────────────────── */}
+      <div className="af-panel-card">
+        <div className="af-panel-header mb-3">
+          <h2 className="af-panel-title">Actions Rapides</h2>
+          <span className="af-stat-subtitle-text">Accès direct aux fonctionnalités clés</span>
+        </div>
+        <div className="af-quick-actions-grid">
+          <Link to="/farmer/products" className="af-quick-action-card">
+            <span className="af-quick-action-icon">📦</span>
+            <div>
+              <div className="af-quick-action-title">Gérer mes produits</div>
+              <div className="af-quick-action-sub">Modifier prix et stocks</div>
+            </div>
+          </Link>
+
+          <Link to="/farmer/harvests" className="af-quick-action-card">
+            <span className="af-quick-action-icon">🌾</span>
+            <div>
+              <div className="af-quick-action-title">Gérer mes récoltes</div>
+              <div className="af-quick-action-sub">Suivre les maturités</div>
+            </div>
+          </Link>
+
+          <Link to="/farmer/orders" className="af-quick-action-card">
+            <span className="af-quick-action-icon">🚚</span>
+            <div>
+              <div className="af-quick-action-title">Commandes reçues</div>
+              <div className="af-quick-action-sub">Suivi des livraisons</div>
+            </div>
+          </Link>
+
+          <Link to="/farmer/verification" className="af-quick-action-card">
+            <span className="af-quick-action-icon">🛡️</span>
+            <div>
+              <div className="af-quick-action-title">Dossier de vérification</div>
+              <div className="af-quick-action-sub">Certifier mon exploitation</div>
+            </div>
+          </Link>
+
+          <Link to="/farmer/profile" className="af-quick-action-card">
+            <span className="af-quick-action-icon">🏡</span>
+            <div>
+              <div className="af-quick-action-title">Mon exploitation</div>
+              <div className="af-quick-action-sub">Coordonnées et région</div>
+            </div>
+          </Link>
+
+          <Link to="/products" className="af-quick-action-card">
+            <span className="af-quick-action-icon">🏪</span>
+            <div>
+              <div className="af-quick-action-title">Catalogue public</div>
+              <div className="af-quick-action-sub">Vue marché global</div>
+            </div>
+          </Link>
+        </div>
+      </div>
+
+      {/* ── 7. Verification Required Modal (Phase 07) ─────────────────── */}
       {VerificationModal}
     </div>
   );
