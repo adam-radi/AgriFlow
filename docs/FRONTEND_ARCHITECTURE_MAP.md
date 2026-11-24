@@ -35,9 +35,11 @@ agriflow-web/
 │   │           └── deliverySlice.js
 │   ├── components/              # Composants réutilisables par domaine
 │   │   ├── admin/, common/, delivery/, farmer/, harvests/,
-│   │   ├── home/, landing/, layout/, orders/, products/
+│   │   ├── home/, landing/, layout/, orders/, products/,
+│   │   ├── profile/, verification/
 │   ├── features/                # Logique métier par feature (API + slices + selectors)
-│   │   ├── auth/, delivery/, harvests/, orders/, products/
+│   │   ├── auth/, delivery/, harvests/, orders/, products/,
+│   │   ├── profile/, verification/
 │   ├── hooks/
 │   │   ├── useAuth.js
 │   │   └── useAxios.js
@@ -95,13 +97,13 @@ Composant (via useSelector / useDispatch)
 ## 5. 🗺️ Cartes existantes (maps)
 
 ### 5.1 Endpoints — `src/api/endpoints.js`
-Objet `ENDPOINTS` groupé par domaine : `AUTH`, `PRODUCTS`, `HARVESTS`, `ORDERS`, `CART`, `DELIVERY`, `ADMIN`, `PAYMENTS`. Certaines entrées sont des fonctions `(id) => \`/path/${id}\``.
+Objet `ENDPOINTS` groupé par domaine : `AUTH`, `PRODUCTS`, `HARVESTS`, `ORDERS`, `CART`, `DELIVERY`, `ADMIN`, `PAYMENTS`, `PROFILE`, `ACCOUNT`, `VERIFICATION`. Certaines entrées sont des fonctions `(id) => \`/path/${id}\``.
 
 ### 5.2 Endpoints Admin — `src/api/admin/adminEndpoints.js`
 Objet `ADMIN_ENDPOINTS` : `users`, `farmers`, `products`, `orders`, `harvests`, `stats`, `validateFarmer`, `rejectFarmer`, `suspendUser`, `disableProduct`, `enableProduct`, `updateProduct`, `deleteProduct`, `updateOrderStatus`, `createDeliveryUser`.
 
 ### 5.3 Routes — `src/routes/routeConfig.js`
-Tableaux exportés : `publicRoutes`, `authRoutes` (default), `farmerRoutes`, `adminRoutes`, `adminDeliveryRoutes`, `clientOrderRoutes`, `deliveryLivreurRoutes`. Chaque entrée : `{ path, role, element? }`.
+Tableaux exportés : `publicRoutes`, `authRoutes` (default), `farmerRoutes` (inclut `/farmer/profile` et `/farmer/verification`), `adminRoutes` (inclut `/admin/verifications`), `adminDeliveryRoutes`, `clientOrderRoutes` (inclut `/client/profile` et `/client/verification`), `deliveryLivreurRoutes`. Chaque entrée : `{ path, role, element? }`.
 
 ### 5.4 Données mock — `src/api/mockData.js`
 `mockProducts`, `mockHarvests`, `mockOrders` (fallback / tests UI).
@@ -109,7 +111,7 @@ Tableaux exportés : `publicRoutes`, `authRoutes` (default), `farmerRoutes`, `ad
 ### 5.5 État global — `src/app/store/rootReducer.js`
 ```js
 combineReducers({
-    auth, products, harvests, orders, cart, delivery, admin
+    auth, products, harvests, orders, cart, delivery, admin, profile, verification
 })
 ```
 

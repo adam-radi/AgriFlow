@@ -301,6 +301,56 @@ export default function Navbar() {
                                     >
                                         Tableau de bord
                                     </Link>
+                                    {user?.role === "Farmer" && (
+                                        <>
+                                            <Link
+                                                to="/farmer/profile"
+                                                className="d-block px-3 py-2 text-decoration-none rounded"
+                                                style={{ color: "#1D2924", fontSize: "0.88rem" }}
+                                                onClick={closeMenus}
+                                            >
+                                                Mon profil exploitant
+                                            </Link>
+                                            <Link
+                                                to="/farmer/verification"
+                                                className="d-block px-3 py-2 text-decoration-none rounded"
+                                                style={{ color: "#1D2924", fontSize: "0.88rem" }}
+                                                onClick={closeMenus}
+                                            >
+                                                Vérification du compte
+                                            </Link>
+                                        </>
+                                    )}
+                                    {user?.role === "Client" && (
+                                        <>
+                                            <Link
+                                                to="/client/profile"
+                                                className="d-block px-3 py-2 text-decoration-none rounded"
+                                                style={{ color: "#1D2924", fontSize: "0.88rem" }}
+                                                onClick={closeMenus}
+                                            >
+                                                Mon profil acheteur
+                                            </Link>
+                                            <Link
+                                                to="/client/verification"
+                                                className="d-block px-3 py-2 text-decoration-none rounded"
+                                                style={{ color: "#1D2924", fontSize: "0.88rem" }}
+                                                onClick={closeMenus}
+                                            >
+                                                Vérification professionnelle
+                                            </Link>
+                                        </>
+                                    )}
+                                    {user?.role === "Admin" && (
+                                        <Link
+                                            to="/admin/verifications"
+                                            className="d-block px-3 py-2 text-decoration-none rounded"
+                                            style={{ color: "#1D2924", fontSize: "0.88rem" }}
+                                            onClick={closeMenus}
+                                        >
+                                            Modération des comptes
+                                        </Link>
+                                    )}
                                     <button
                                         type="button"
                                         onClick={handleLogout}

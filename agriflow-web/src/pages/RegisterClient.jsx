@@ -12,6 +12,9 @@ import Logo from "../components/layout/Logo";
 import { Button, Badge } from "../components/common";
 import "../assets/auth.css";
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const MOROCCAN_PHONE_REGEX = /^(?:(?:\+|00)212|0)[5-7]\d{8}$/;
+
 const BUYER_ZONES = [
     { value: "Casablanca-Settat", label: "Grand Casablanca / Settat" },
     { value: "Rabat-Salé-Kénitra", label: "Rabat / Salé / Kénitra" },
@@ -24,7 +27,7 @@ const BUYER_ZONES = [
 ];
 
 /**
- * RegisterClientPage — Inscription dédiée aux Acheteurs Professionnels (Phase 05)
+ * RegisterClientPage — Inscription dédiée aux Acheteurs Professionnels (Phase 05 / 07)
  * Conçu pour les épiceries, primeurs, restaurateurs et commerces d'alimentation.
  */
 export default function RegisterClientPage() {
@@ -36,41 +39,87 @@ export default function RegisterClientPage() {
         password: "",
         password_confirmation: "",
     });
+    const [fieldErrors, setFieldErrors] = useState({});
     const [showPassword, setShowPassword] = useState(false);
     const [localError, setLocalError] = useState("");
 
     const dispatch = useDispatch();
     const navigate = useNavigate();
     const loading = useSelector(selectAuthLoading);
-    const error = useSelector(selectAuthError);
+    const serverError = useSelector(selectAuthError);
 
     const handleChange = (e) => {
-        setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+        const { name, value } = e.target;
+        setFormData((prev) => ({ ...prev, [name]: value }));
         setLocalError("");
+        if (fieldErrors[name]) {
+            setFieldErrors((prev) => ({ ...prev, [name]: "" }));
+        }
     };
 
-    const handleSubmit = (e) => {
+    const validateForm = () => {
+        const errors = {};
+        const trimmedName = formData.name.trim();
+        const trimmedEmail = formData.email.trim();
+        const cleanPhone = formData.phone.replace(/[\s.-]/g, "");
+
+        if (!trimmedName) {
+            errors.name = "Le nom ou l'enseigne commerciale est obligatoire.";
+        } else if (trimmedName.length < 2) {
+            errors.name = "Le nom doit comporter au moins 2 caractères.";
+        }
+
+        if (!cleanPhone) {
+            errors.phone = "Le numéro de téléphone est obligatoire.";
+        } else if (!MOROCCAN_PHONE_REGEX.test(cleanPhone)) {
+            errors.phone = "Numéro marocain invalide (ex: 06 12 34 56 78 ou 05 22 ...).";
+        }
+
+        if (!trimmedEmail) {
+            errors.email = "L'adresse e-mail professionnelle est obligatoire.";
+        } else if (!EMAIL_REGEX.test(trimmedEmail)) {
+            errors.email = "Format d'e-mail invalide (ex: commerce@contact.ma).";
+        }
+
+        if (!formData.password) {
+            errors.password = "Le mot de passe est obligatoire.";
+        } else if (formData.password.length < 8) {
+            errors.password = "Le mot de passe doit comporter au moins 8 caractères.";
+        }
+
+        if (!formData.password_confirmation) {
+            errors.password_confirmation = "Veuillez confirmer votre mot de passe.";
+        } else if (formData.password !== formData.password_confirmation) {
+            errors.password_confirmation = "Les mots de passe ne correspondent pas.";
+        }
+
+        setFieldErrors(errors);
+        return Object.keys(errors).length === 0;
+    };
+
+    const handleSubmit = async (e) => {
         e.preventDefault();
+        setLocalError("");
 
-        if (formData.password.length < 8) {
-            setLocalError("Le mot de passe doit contenir au moins 8 caractères.");
-            return;
+        if (!validateForm()) return;
+
+        try {
+            await dispatch(registerClient(formData)).unwrap();
+            navigate("/products");
+        } catch (err) {
+            if (err && typeof err === "object") {
+                const apiFieldErrors = {};
+                for (const [key, msgs] of Object.entries(err)) {
+                    apiFieldErrors[key] = Array.isArray(msgs) ? msgs[0] : msgs;
+                }
+                setFieldErrors((prev) => ({ ...prev, ...apiFieldErrors }));
+            } else if (typeof err === "string") {
+                setLocalError(err);
+            }
         }
-
-        if (formData.password !== formData.password_confirmation) {
-            setLocalError("Les mots de passe ne correspondent pas.");
-            return;
-        }
-
-        dispatch(registerClient(formData))
-            .unwrap()
-            .then(() => {
-                navigate("/products");
-            })
-            .catch(() => {});
     };
 
-    const displayError = localError || error;
+    const displayError = localError || (typeof serverError === "string" ? serverError : null);
 
     return (
         <div className="af-auth-wrapper">
@@ -96,10 +145,11 @@ export default function RegisterClientPage() {
                         {displayError && (
                             <Alert
                                 variant="danger"
-                                className="rounded-3 mb-4 py-2 small"
+                                className="rounded-3 mb-4 py-2 small d-flex align-items-center gap-2"
                                 style={{ backgroundColor: "#FFF0EF", borderColor: "#FED7AA", color: "#9A3412" }}
                             >
-                                {typeof displayError === "string" ? displayError : "Veuillez vérifier les informations renseignées."}
+                                <span>⚠️</span>
+                                <div>{displayError}</div>
                             </Alert>
                         )}
 
@@ -113,14 +163,20 @@ export default function RegisterClientPage() {
                                         </label>
                                         <input
                                             id="client-name"
-                                            className="af-auth-input"
+                                            className={`af-auth-input ${fieldErrors.name ? "is-invalid" : ""}`}
                                             type="text"
                                             name="name"
                                             placeholder="Ex: Primeurs Hassan ou Resto Bio"
                                             value={formData.name}
                                             onChange={handleChange}
+                                            disabled={loading}
                                             required
                                         />
+                                        {fieldErrors.name && (
+                                            <div className="af-field-error">
+                                                <span>✕</span> {fieldErrors.name}
+                                            </div>
+                                        )}
                                     </div>
                                 </Col>
 
@@ -132,14 +188,20 @@ export default function RegisterClientPage() {
                                         </label>
                                         <input
                                             id="client-phone"
-                                            className="af-auth-input"
+                                            className={`af-auth-input ${fieldErrors.phone ? "is-invalid" : ""}`}
                                             type="tel"
                                             name="phone"
                                             placeholder="06 12 34 56 78"
                                             value={formData.phone}
                                             onChange={handleChange}
+                                            disabled={loading}
                                             required
                                         />
+                                        {fieldErrors.phone && (
+                                            <div className="af-field-error">
+                                                <span>✕</span> {fieldErrors.phone}
+                                            </div>
+                                        )}
                                     </div>
                                 </Col>
 
@@ -155,6 +217,7 @@ export default function RegisterClientPage() {
                                             name="zone"
                                             value={formData.zone}
                                             onChange={handleChange}
+                                            disabled={loading}
                                             required
                                         >
                                             {BUYER_ZONES.map((z) => (
@@ -174,15 +237,21 @@ export default function RegisterClientPage() {
                                         </label>
                                         <input
                                             id="client-email"
-                                            className="af-auth-input"
+                                            className={`af-auth-input ${fieldErrors.email ? "is-invalid" : ""}`}
                                             type="email"
                                             name="email"
                                             placeholder="commerce@contact.ma"
                                             value={formData.email}
                                             onChange={handleChange}
+                                            disabled={loading}
                                             required
                                             autoComplete="email"
                                         />
+                                        {fieldErrors.email && (
+                                            <div className="af-field-error">
+                                                <span>✕</span> {fieldErrors.email}
+                                            </div>
+                                        )}
                                     </div>
                                 </Col>
 
@@ -195,22 +264,29 @@ export default function RegisterClientPage() {
                                         <div className="af-password-wrapper">
                                             <input
                                                 id="client-password"
-                                                className="af-auth-input"
+                                                className={`af-auth-input ${fieldErrors.password ? "is-invalid" : ""}`}
                                                 type={showPassword ? "text" : "password"}
                                                 name="password"
                                                 placeholder="••••••••"
                                                 value={formData.password}
                                                 onChange={handleChange}
+                                                disabled={loading}
                                                 required
                                             />
                                             <button
                                                 type="button"
                                                 className="af-password-toggle"
                                                 onClick={() => setShowPassword(!showPassword)}
+                                                aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
                                             >
                                                 {showPassword ? "Masquer" : "Afficher"}
                                             </button>
                                         </div>
+                                        {fieldErrors.password && (
+                                            <div className="af-field-error">
+                                                <span>✕</span> {fieldErrors.password}
+                                            </div>
+                                        )}
                                     </div>
                                 </Col>
 
@@ -222,14 +298,20 @@ export default function RegisterClientPage() {
                                         </label>
                                         <input
                                             id="client-confirm"
-                                            className="af-auth-input"
+                                            className={`af-auth-input ${fieldErrors.password_confirmation ? "is-invalid" : ""}`}
                                             type={showPassword ? "text" : "password"}
                                             name="password_confirmation"
                                             placeholder="••••••••"
                                             value={formData.password_confirmation}
                                             onChange={handleChange}
+                                            disabled={loading}
                                             required
                                         />
+                                        {fieldErrors.password_confirmation && (
+                                            <div className="af-field-error">
+                                                <span>✕</span> {fieldErrors.password_confirmation}
+                                            </div>
+                                        )}
                                     </div>
                                 </Col>
 
@@ -241,9 +323,10 @@ export default function RegisterClientPage() {
                                         pill
                                         size="lg"
                                         isLoading={loading}
+                                        disabled={loading}
                                         className="w-100"
                                     >
-                                        Créer mon compte Acheteur Pro →
+                                        {loading ? "Création du compte en cours..." : "Créer mon compte Acheteur Pro →"}
                                     </Button>
                                 </Col>
                             </Row>

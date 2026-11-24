@@ -1,28 +1,14 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect } from "vitest";
 import orderReducer, {
-    addToCart,
-    removeFromCart,
-    updatePackQuantity,
-    clearCart,
     clearOrderError,
     clearOrderSuccess,
     createOrder,
     fetchOrders,
     fetchOrderById,
-    fetchFarmerOrders,
     fetchAdminOrders,
 } from "./orderSlice";
 
-// Clear localStorage to avoid cart persistence bleeding between tests
-beforeEach(() => {
-    localStorage.removeItem("agriflow_cart");
-});
-afterEach(() => {
-    localStorage.removeItem("agriflow_cart");
-});
-
 const initialState = {
-    cartItems: [],
     orders: [],
     currentOrder: null,
     loading: false,
@@ -30,75 +16,11 @@ const initialState = {
     success: null,
 };
 
-const mockItem = {
-    harvestId: 1,
-    quantityStandardId: 10,
-    unitPrice: 50,
-    packQuantity: 2,
-    subtotal: 100,
-};
-
-describe("orderSlice — cart reducers", () => {
+describe("orderSlice — order reducers", () => {
     it("should return initial state", () => {
         const state = orderReducer(undefined, { type: "@@INIT" });
-        expect(state.cartItems).toEqual([]);
         expect(state.orders).toEqual([]);
         expect(state.loading).toBe(false);
-    });
-
-    it("addToCart — adds new item to cart", () => {
-        const state = orderReducer(initialState, addToCart(mockItem));
-        expect(state.cartItems.length).toBe(1);
-        expect(state.cartItems[0].harvestId).toBe(1);
-        expect(state.cartItems[0].packQuantity).toBe(2);
-    });
-
-    it("addToCart — increases packQuantity if same item already exists", () => {
-        const stateWithItem = { ...initialState, cartItems: [{ ...mockItem }] };
-        const state = orderReducer(stateWithItem, addToCart({ ...mockItem, packQuantity: 3 }));
-        expect(state.cartItems.length).toBe(1);
-        expect(state.cartItems[0].packQuantity).toBe(5); // 2 + 3
-    });
-
-    it("addToCart — adds separate item if different harvestId", () => {
-        const stateWithItem = { ...initialState, cartItems: [{ ...mockItem }] };
-        const newItem = { ...mockItem, harvestId: 2 };
-        const state = orderReducer(stateWithItem, addToCart(newItem));
-        expect(state.cartItems.length).toBe(2);
-    });
-
-    it("removeFromCart — removes correct item from cart", () => {
-        const stateWithItem = { ...initialState, cartItems: [{ ...mockItem }] };
-        const state = orderReducer(
-            stateWithItem,
-            removeFromCart({ harvestId: 1, quantityStandardId: 10 })
-        );
-        expect(state.cartItems.length).toBe(0);
-    });
-
-    it("updatePackQuantity — updates quantity and recalculates subtotal", () => {
-        const stateWithItem = { ...initialState, cartItems: [{ ...mockItem }] };
-        const state = orderReducer(
-            stateWithItem,
-            updatePackQuantity({ harvestId: 1, quantityStandardId: 10, packQuantity: 5 })
-        );
-        expect(state.cartItems[0].packQuantity).toBe(5);
-        expect(state.cartItems[0].subtotal).toBe(250); // 50 * 5
-    });
-
-    it("updatePackQuantity — does not allow quantity below 1", () => {
-        const stateWithItem = { ...initialState, cartItems: [{ ...mockItem }] };
-        const state = orderReducer(
-            stateWithItem,
-            updatePackQuantity({ harvestId: 1, quantityStandardId: 10, packQuantity: -5 })
-        );
-        expect(state.cartItems[0].packQuantity).toBe(1); // Math.max(1, -5) = 1
-    });
-
-    it("clearCart — empties the cart", () => {
-        const stateWithItem = { ...initialState, cartItems: [{ ...mockItem }] };
-        const state = orderReducer(stateWithItem, clearCart());
-        expect(state.cartItems).toEqual([]);
     });
 
     it("clearOrderError — sets error to null", () => {
@@ -122,12 +44,10 @@ describe("orderSlice — createOrder thunk", () => {
         expect(state.success).toBeNull();
     });
 
-    it("createOrder.fulfilled — clears cart, adds order, sets success message", () => {
-        const stateWithCart = { ...initialState, cartItems: [{ ...mockItem }] };
+    it("createOrder.fulfilled — adds order, sets currentOrder and success message", () => {
         const newOrder = { id: 99, total_amount: 100, status: "pending" };
         const action = { type: createOrder.fulfilled.type, payload: newOrder };
-        const state = orderReducer(stateWithCart, action);
-        expect(state.cartItems).toEqual([]);
+        const state = orderReducer(initialState, action);
         expect(state.orders[0]).toEqual(newOrder);
         expect(state.currentOrder).toEqual(newOrder);
         expect(state.success).toBe("Order placed successfully!");

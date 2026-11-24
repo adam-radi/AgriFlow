@@ -3,10 +3,13 @@ import { useDispatch, useSelector } from "react-redux";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Alert } from "react-bootstrap";
 import Logo from "../components/layout/Logo";
-import { Badge } from "../components/common";
+import { Badge, Button } from "../components/common";
 import { registerFarmer, registerClient } from "../features/auth/authThunks";
 import { selectAuthLoading, selectAuthError } from "../features/auth/authSelectors";
 import "../assets/auth.css";
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const MOROCCAN_PHONE_REGEX = /^(?:(?:\+|00)212|0)[5-7]\d{8}$/;
 
 const BUYER_ZONES = [
     { value: "Casablanca-Settat", label: "Grand Casablanca / Settat" },
@@ -20,12 +23,7 @@ const BUYER_ZONES = [
 ];
 
 /**
- * RegisterPage — Inscription AgriFlow avec Choix de Rôle (Phase 07)
- *
- * Permet à l'utilisateur de :
- * 1. Choisir son profil : Agriculteur ou Acheteur Professionnel
- * 2. Remplir le formulaire adapté
- * 3. Accéder immédiatement à l'espace correspondant après inscription
+ * RegisterPage — Inscription AgriFlow avec Choix de Rôle & Validation Avancée (Phase 07)
  */
 export default function RegisterPage() {
     const location = useLocation();
@@ -47,6 +45,7 @@ export default function RegisterPage() {
         password: "",
         password_confirmation: "",
     });
+    const [fieldErrors, setFieldErrors] = useState({});
     const [showPassword, setShowPassword] = useState(false);
     const [localError, setLocalError] = useState("");
 
@@ -54,68 +53,107 @@ export default function RegisterPage() {
         const { name, value } = e.target;
         setFormData((prev) => ({ ...prev, [name]: value }));
         setLocalError("");
+        if (fieldErrors[name]) {
+            setFieldErrors((prev) => ({ ...prev, [name]: "" }));
+        }
     };
 
     const handleRoleSelect = (role) => {
         setSelectedRole(role);
         setLocalError("");
+        setFieldErrors({});
+    };
+
+    const validateForm = () => {
+        const errors = {};
+        const trimmedName = formData.name.trim();
+        const trimmedEmail = formData.email.trim();
+        const cleanPhone = formData.phone.replace(/[\s.-]/g, "");
+
+        if (!trimmedName) {
+            errors.name = selectedRole === "Farmer"
+                ? "Le nom complet ou nom de l'exploitation est obligatoire."
+                : "Le nom du responsable ou de l'établissement est obligatoire.";
+        } else if (trimmedName.length < 2) {
+            errors.name = "Le nom doit comporter au moins 2 caractères.";
+        }
+
+        if (!trimmedEmail) {
+            errors.email = "L'adresse e-mail professionnelle est obligatoire.";
+        } else if (!EMAIL_REGEX.test(trimmedEmail)) {
+            errors.email = "Format d'adresse e-mail invalide (ex: contact@exemple.ma).";
+        }
+
+        if (selectedRole === "Client") {
+            if (!cleanPhone) {
+                errors.phone = "Le numéro de téléphone est obligatoire pour les acheteurs.";
+            } else if (!MOROCCAN_PHONE_REGEX.test(cleanPhone)) {
+                errors.phone = "Numéro marocain invalide (ex: 06 12 34 56 78 ou 05 22 ...).";
+            }
+        } else if (cleanPhone && !MOROCCAN_PHONE_REGEX.test(cleanPhone)) {
+            errors.phone = "Numéro de téléphone marocain invalide (ex: 06 12 34 56 78).";
+        }
+
+        if (!formData.password) {
+            errors.password = "Le mot de passe est obligatoire.";
+        } else if (formData.password.length < 8) {
+            errors.password = "Le mot de passe doit comporter au moins 8 caractères.";
+        }
+
+        if (!formData.password_confirmation) {
+            errors.password_confirmation = "Veuillez confirmer votre mot de passe.";
+        } else if (formData.password !== formData.password_confirmation) {
+            errors.password_confirmation = "Les mots de passe ne correspondent pas.";
+        }
+
+        setFieldErrors(errors);
+        return Object.keys(errors).length === 0;
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLocalError("");
 
-        if (!formData.name.trim()) {
-            setLocalError("Le nom complet est obligatoire.");
-            return;
-        }
-
-        if (!formData.email.trim()) {
-            setLocalError("L'adresse e-mail est obligatoire.");
-            return;
-        }
-
-        if (formData.password.length < 8) {
-            setLocalError("Le mot de passe doit comporter au moins 8 caractères.");
-            return;
-        }
-
-        if (formData.password !== formData.password_confirmation) {
-            setLocalError("Les mots de passe ne correspondent pas.");
-            return;
-        }
+        if (!validateForm()) return;
 
         try {
             if (selectedRole === "Farmer") {
                 const payload = {
-                    name: formData.name,
-                    email: formData.email,
-                    phone: formData.phone || undefined,
+                    name: formData.name.trim(),
+                    email: formData.email.trim(),
+                    phone: formData.phone.trim() || undefined,
                     password: formData.password,
                     password_confirmation: formData.password_confirmation,
                 };
                 await dispatch(registerFarmer(payload)).unwrap();
-                // Redirection immédiate vers le dashboard Agriculteur (Phase 07)
                 navigate("/farmer/dashboard");
             } else {
                 const payload = {
-                    name: formData.name,
-                    email: formData.email,
-                    phone: formData.phone,
+                    name: formData.name.trim(),
+                    email: formData.email.trim(),
+                    phone: formData.phone.trim(),
                     zone: formData.zone,
                     password: formData.password,
                     password_confirmation: formData.password_confirmation,
                 };
                 await dispatch(registerClient(payload)).unwrap();
-                // Redirection immédiate vers le catalogue acheteur
                 navigate("/products");
             }
-        } catch {
-            // L'erreur est capturée et affichée via Redux
+        } catch (err) {
+            // Mapping précis des erreurs de validation retournées par l'API Laravel
+            if (err && typeof err === "object") {
+                const apiFieldErrors = {};
+                for (const [key, msgs] of Object.entries(err)) {
+                    apiFieldErrors[key] = Array.isArray(msgs) ? msgs[0] : msgs;
+                }
+                setFieldErrors((prev) => ({ ...prev, ...apiFieldErrors }));
+            } else if (typeof err === "string") {
+                setLocalError(err);
+            }
         }
     };
 
-    const displayError = localError || serverError;
+    const displayError = localError || (typeof serverError === "string" ? serverError : null);
 
     return (
         <div className="af-auth-wrapper">
@@ -228,10 +266,11 @@ export default function RegisterPage() {
                             </div>
                         </div>
 
-                        {/* Message d'erreur */}
+                        {/* Message d'erreur global */}
                         {displayError && (
-                            <Alert variant="danger" className="py-2 small rounded-3 mb-3">
-                                ⚠️ {typeof displayError === "string" ? displayError : "Erreur de validation."}
+                            <Alert variant="danger" className="py-2 small rounded-3 mb-3 d-flex align-items-center gap-2">
+                                <span>⚠️</span>
+                                <div>{displayError}</div>
                             </Alert>
                         )}
 
@@ -240,38 +279,50 @@ export default function RegisterPage() {
                             {/* Nom complet */}
                             <div className="af-auth-group">
                                 <label className="af-auth-label" htmlFor="register-name">
-                                    {selectedRole === "Farmer" ? "Nom complet ou Nom de l'exploitation" : "Nom du responsable / Établissement"}
+                                    {selectedRole === "Farmer" ? "Nom complet ou Nom de l'exploitation *" : "Nom du responsable / Établissement *"}
                                 </label>
                                 <input
                                     id="register-name"
                                     type="text"
                                     name="name"
-                                    className="af-auth-input"
+                                    className={`af-auth-input ${fieldErrors.name ? "is-invalid" : ""}`}
                                     placeholder={selectedRole === "Farmer" ? "ex. Karim Benali (Ferme Bio Souss)" : "ex. Épicerie Al Amal"}
                                     value={formData.name}
                                     onChange={handleChange}
+                                    disabled={loading}
                                     required
                                     autoComplete="name"
                                 />
+                                {fieldErrors.name && (
+                                    <div className="af-field-error">
+                                        <span>✕</span> {fieldErrors.name}
+                                    </div>
+                                )}
                             </div>
 
                             {/* Email & Téléphone en grille */}
                             <div className="row g-2 af-auth-group">
                                 <div className="col-12 col-md-7">
                                     <label className="af-auth-label" htmlFor="register-email">
-                                        Adresse e-mail
+                                        Adresse e-mail *
                                     </label>
                                     <input
                                         id="register-email"
                                         type="email"
                                         name="email"
-                                        className="af-auth-input"
+                                        className={`af-auth-input ${fieldErrors.email ? "is-invalid" : ""}`}
                                         placeholder="contact@exemple.ma"
                                         value={formData.email}
                                         onChange={handleChange}
+                                        disabled={loading}
                                         required
                                         autoComplete="email"
                                     />
+                                    {fieldErrors.email && (
+                                        <div className="af-field-error">
+                                            <span>✕</span> {fieldErrors.email}
+                                        </div>
+                                    )}
                                 </div>
 
                                 <div className="col-12 col-md-5">
@@ -282,12 +333,18 @@ export default function RegisterPage() {
                                         id="register-phone"
                                         type="tel"
                                         name="phone"
-                                        className="af-auth-input"
+                                        className={`af-auth-input ${fieldErrors.phone ? "is-invalid" : ""}`}
                                         placeholder="06 12 34 56 78"
                                         value={formData.phone}
                                         onChange={handleChange}
+                                        disabled={loading}
                                         autoComplete="tel"
                                     />
+                                    {fieldErrors.phone && (
+                                        <div className="af-field-error">
+                                            <span>✕</span> {fieldErrors.phone}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
@@ -303,6 +360,7 @@ export default function RegisterPage() {
                                         className="af-auth-input"
                                         value={formData.zone}
                                         onChange={handleChange}
+                                        disabled={loading}
                                     >
                                         {BUYER_ZONES.map((z) => (
                                             <option key={z.value} value={z.value}>
@@ -317,7 +375,7 @@ export default function RegisterPage() {
                             <div className="af-auth-group">
                                 <div className="d-flex justify-content-between align-items-center mb-1">
                                     <label className="af-auth-label m-0" htmlFor="register-password">
-                                        Mot de passe (8 car. min)
+                                        Mot de passe (8 car. min) *
                                     </label>
                                     <button
                                         type="button"
@@ -332,45 +390,61 @@ export default function RegisterPage() {
                                     id="register-password"
                                     type={showPassword ? "text" : "password"}
                                     name="password"
-                                    className="af-auth-input"
+                                    className={`af-auth-input ${fieldErrors.password ? "is-invalid" : ""}`}
                                     placeholder="••••••••"
                                     value={formData.password}
                                     onChange={handleChange}
+                                    disabled={loading}
                                     required
                                     autoComplete="new-password"
                                 />
+                                {fieldErrors.password && (
+                                    <div className="af-field-error">
+                                        <span>✕</span> {fieldErrors.password}
+                                    </div>
+                                )}
                             </div>
 
                             {/* Confirmation mot de passe */}
                             <div className="af-auth-group">
                                 <label className="af-auth-label" htmlFor="register-confirm">
-                                    Confirmer le mot de passe
+                                    Confirmer le mot de passe *
                                 </label>
                                 <input
                                     id="register-confirm"
                                     type={showPassword ? "text" : "password"}
                                     name="password_confirmation"
-                                    className="af-auth-input"
+                                    className={`af-auth-input ${fieldErrors.password_confirmation ? "is-invalid" : ""}`}
                                     placeholder="••••••••"
                                     value={formData.password_confirmation}
                                     onChange={handleChange}
+                                    disabled={loading}
                                     required
                                     autoComplete="new-password"
                                 />
+                                {fieldErrors.password_confirmation && (
+                                    <div className="af-field-error">
+                                        <span>✕</span> {fieldErrors.password_confirmation}
+                                    </div>
+                                )}
                             </div>
 
-                            {/* Bouton de soumission */}
-                            <button
-                                type="submit"
-                                className="btn w-100 py-2 rounded-pill fw-semibold text-white mt-2"
-                                style={{
-                                    backgroundColor: "var(--af-green-950, #15372F)",
-                                    boxShadow: "0 4px 14px rgba(21, 55, 47, 0.2)",
-                                }}
-                                disabled={loading}
-                            >
-                                {loading ? "Création du compte..." : `Créer mon compte ${selectedRole === "Farmer" ? "Agriculteur" : "Acheteur"}`}
-                            </button>
+                            {/* Bouton de soumission avec état de chargement */}
+                            <div className="mt-3">
+                                <Button
+                                    type="submit"
+                                    variant="primary"
+                                    pill
+                                    size="lg"
+                                    isLoading={loading}
+                                    disabled={loading}
+                                    className="w-100"
+                                >
+                                    {loading
+                                        ? "Création du compte en cours..."
+                                        : `Créer mon compte ${selectedRole === "Farmer" ? "Agriculteur" : "Acheteur"} →`}
+                                </Button>
+                            </div>
                         </form>
 
                         {/* Lien vers Connexion */}

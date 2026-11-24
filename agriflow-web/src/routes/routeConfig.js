@@ -28,12 +28,15 @@ export const farmerRoutes = [
     { path: "/farmer/harvests/create", role: "Farmer" },
     { path: "/farmer/harvests/:id", role: "Farmer" },
     { path: "/farmer/harvests/:id/edit", role: "Farmer" },
+    { path: "/farmer/profile", role: "Farmer" },
+    { path: "/farmer/verification", role: "Farmer" },
 ];
 
 export const adminRoutes = [
     { path: "/admin", role: "Admin" },
     { path: "/admin/users", role: "Admin" },
     { path: "/admin/farmers", role: "Admin" },
+    { path: "/admin/verifications", role: "Admin" },
     { path: "/admin/products", role: "Admin" },
     { path: "/admin/orders", role: "Admin" },
     { path: "/admin/harvests", role: "Admin" },
@@ -50,6 +53,8 @@ export const clientOrderRoutes = [
     { path: "/client/checkout", role: "Client" },
     { path: "/client/orders", role: "Client" },
     { path: "/client/orders/:id", role: "Client" },
+    { path: "/client/profile", role: "Client" },
+    { path: "/client/verification", role: "Client" },
 ];
 
 export const deliveryLivreurRoutes = [

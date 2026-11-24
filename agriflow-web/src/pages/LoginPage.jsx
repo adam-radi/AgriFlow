@@ -14,26 +14,53 @@ import Logo from "../components/layout/Logo";
 import { Button } from "../components/common";
 import "../assets/auth.css";
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 /**
- * LoginPage — Page de connexion officielle AgriFlow (Phase 05)
- * Conception split-screen premium, épurée et rassurante, inspirée des standards AgTech.
+ * LoginPage — Page de connexion officielle AgriFlow (Phase 05 / 07)
+ * Conception split-screen premium, feedback temps réel et gestion fine des erreurs.
  */
 export default function LoginPage() {
     const [formData, setFormData] = useState({ email: "", password: "" });
+    const [fieldErrors, setFieldErrors] = useState({});
     const [showPassword, setShowPassword] = useState(false);
 
     const dispatch = useDispatch();
     const isAuthenticated = useSelector(selectIsAuthenticated);
     const loading = useSelector(selectAuthLoading);
-    const error = useSelector(selectAuthError);
+    const serverError = useSelector(selectAuthError);
     const role = useSelector(selectUserRole);
 
     const handleChange = (e) => {
-        setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+        const { name, value } = e.target;
+        setFormData((prev) => ({ ...prev, [name]: value }));
+        // Nettoyage immédiat de l'erreur du champ modifié
+        if (fieldErrors[name]) {
+            setFieldErrors((prev) => ({ ...prev, [name]: "" }));
+        }
+    };
+
+    const validateForm = () => {
+        const errors = {};
+        const trimmedEmail = formData.email.trim();
+
+        if (!trimmedEmail) {
+            errors.email = "L'adresse e-mail est obligatoire.";
+        } else if (!EMAIL_REGEX.test(trimmedEmail)) {
+            errors.email = "Format d'e-mail invalide (ex: contact@exemple.ma).";
+        }
+
+        if (!formData.password) {
+            errors.password = "Le mot de passe est obligatoire.";
+        }
+
+        setFieldErrors(errors);
+        return Object.keys(errors).length === 0;
     };
 
     const handleSubmit = (e) => {
         e.preventDefault();
+        if (!validateForm()) return;
         dispatch(loginUser(formData));
     };
 
@@ -79,18 +106,23 @@ export default function LoginPage() {
                             Pour vous connecter à votre compte, renseignez votre adresse e-mail ainsi que votre mot de passe.
                         </p>
 
-                        {/* Alerte d'erreur éventuelle */}
-                        {error && (
+                        {/* Alerte d'erreur globale ou serveur */}
+                        {serverError && (
                             <Alert
                                 variant="danger"
-                                className="rounded-3 mb-4 py-2 small"
+                                className="rounded-3 mb-4 py-2 small d-flex align-items-center gap-2"
                                 style={{
                                     backgroundColor: "#FFF0EF",
                                     borderColor: "#FED7AA",
                                     color: "#9A3412",
                                 }}
                             >
-                                {typeof error === "string" ? error : "Identifiants invalides. Veuillez vérifier vos accès."}
+                                <span style={{ fontSize: "1.1rem" }}>⚠️</span>
+                                <div>
+                                    {typeof serverError === "string"
+                                        ? serverError
+                                        : "Identifiants invalides. Veuillez vérifier votre adresse e-mail et mot de passe."}
+                                </div>
                             </Alert>
                         )}
 
@@ -103,15 +135,22 @@ export default function LoginPage() {
                                 </label>
                                 <input
                                     id="login-email"
-                                    className="af-auth-input"
+                                    className={`af-auth-input ${fieldErrors.email ? "is-invalid" : ""}`}
                                     type="email"
                                     name="email"
                                     placeholder="exemple@exploitation.ma"
                                     value={formData.email}
                                     onChange={handleChange}
+                                    disabled={loading}
                                     required
                                     autoComplete="email"
+                                    aria-describedby={fieldErrors.email ? "login-email-error" : undefined}
                                 />
+                                {fieldErrors.email && (
+                                    <div id="login-email-error" className="af-field-error">
+                                        <span>✕</span> {fieldErrors.email}
+                                    </div>
+                                )}
                             </div>
 
                             {/* Champ Mot de passe avec toggle */}
@@ -124,14 +163,16 @@ export default function LoginPage() {
                                 <div className="af-password-wrapper">
                                     <input
                                         id="login-password"
-                                        className="af-auth-input"
+                                        className={`af-auth-input ${fieldErrors.password ? "is-invalid" : ""}`}
                                         type={showPassword ? "text" : "password"}
                                         name="password"
                                         placeholder="••••••••"
                                         value={formData.password}
                                         onChange={handleChange}
+                                        disabled={loading}
                                         required
                                         autoComplete="current-password"
+                                        aria-describedby={fieldErrors.password ? "login-password-error" : undefined}
                                     />
                                     <button
                                         type="button"
@@ -142,9 +183,14 @@ export default function LoginPage() {
                                         {showPassword ? "Masquer" : "Afficher"}
                                     </button>
                                 </div>
+                                {fieldErrors.password && (
+                                    <div id="login-password-error" className="af-field-error">
+                                        <span>✕</span> {fieldErrors.password}
+                                    </div>
+                                )}
                             </div>
 
-                            {/* Bouton de soumission */}
+                            {/* Bouton de soumission avec état de chargement */}
                             <div className="mt-4">
                                 <Button
                                     type="submit"
@@ -152,9 +198,10 @@ export default function LoginPage() {
                                     pill
                                     size="lg"
                                     isLoading={loading}
+                                    disabled={loading}
                                     className="w-100"
                                 >
-                                    Se connecter →
+                                    {loading ? "Connexion en cours..." : "Se connecter →"}
                                 </Button>
                             </div>
                         </form>

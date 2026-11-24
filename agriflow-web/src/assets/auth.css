@@ -205,3 +205,45 @@
   border-color: var(--af-green-900, #194638);
   background-color: var(--af-green-50, #F2F7F4);
 }
+
+/* Validation & Precise Error UX (Phase 07 Enhancement) */
+.af-auth-input.is-invalid {
+  border-color: #E53E3E !important;
+  background-color: #FFF5F5 !important;
+}
+
+.af-auth-input.is-invalid:focus {
+  box-shadow: 0 0 0 3px rgba(229, 62, 62, 0.18) !important;
+}
+
+.af-field-error {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #C53030;
+  margin-top: 0.35rem;
+  line-height: 1.35;
+  animation: afFieldSlideIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes afFieldSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Button Loading & Disabled Polish */
+.af-btn:disabled,
+.af-btn[disabled] {
+  opacity: 0.75 !important;
+  cursor: not-allowed !important;
+  pointer-events: none;
+}
+
