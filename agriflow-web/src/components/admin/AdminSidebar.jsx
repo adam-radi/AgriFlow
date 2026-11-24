@@ -5,6 +5,7 @@ const links = [
     { path: "/admin", label: "Dashboard", icon: "📊" },
     { path: "/admin/users", label: "Users", icon: "👥" },
     { path: "/admin/farmers", label: "Farmers", icon: "🌾" },
+    { path: "/admin/verifications", label: "Vérifications", icon: "🛡️" },
     { path: "/admin/products", label: "Products", icon: "📦" },
     { path: "/admin/orders", label: "Orders", icon: "🛒" },
     { path: "/admin/harvests", label: "Harvests", icon: "🌿" },

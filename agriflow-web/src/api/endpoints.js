@@ -50,6 +50,22 @@ const ENDPOINTS = {
         DISABLE_PRODUCT: (id) => `/admin/products/${id}/disable`,
     },
     PAYMENTS: "/payments",
+    PROFILE: {
+        GET: "/profile",
+        UPDATE_FARMER: "/profile/farmer",
+        UPDATE_BUYER: "/profile/buyer",
+    },
+    ACCOUNT: {
+        GET: "/account",
+        UPDATE: "/account",
+        UPDATE_PASSWORD: "/account/password",
+    },
+    VERIFICATION: {
+        ACTIVE: "/verification/active",
+        HISTORY: "/verification/history",
+        SUBMIT_FARMER: "/verification/farmer",
+        SUBMIT_BUYER: "/verification/buyer",
+    },
 };
 
 export default ENDPOINTS;

@@ -6,6 +6,8 @@ import orderReducer from "../../features/orders/orderSlice";
 import cartReducer from "../../features/orders/cartSlice";
 import deliveryReducer from "../../features/delivery/deliverySlice";
 import adminReducer from "../store/slices/admin/adminSlice";
+import profileReducer from "../../features/profile/profileSlice";
+import verificationReducer from "../../features/verification/verificationSlice";
 
 const rootReducer = combineReducers({
    auth: authReducer,
@@ -15,6 +17,8 @@ const rootReducer = combineReducers({
    cart: cartReducer,
    delivery: deliveryReducer,
    admin: adminReducer,
+   profile: profileReducer,
+   verification: verificationReducer,
 })
 
 export default rootReducer;
