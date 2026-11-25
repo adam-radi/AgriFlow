@@ -26,7 +26,9 @@ export const productAPI = {
 
     /** POST /products/:id  — update via _method=PUT (Farmer only) */
     update: (id, formData) => {
-        formData.append("_method", "PUT");
+        if (formData instanceof FormData && !formData.has("_method")) {
+            formData.append("_method", "PUT");
+        }
         return axiosClient.post(`${ENDPOINTS.PRODUCTS}/${id}`, formData, {
             headers: { "Content-Type": "multipart/form-data" },
         });
@@ -35,4 +37,8 @@ export const productAPI = {
     /** DELETE /products/:id  — delete (Farmer only) */
     delete: (id) =>
         axiosClient.delete(`${ENDPOINTS.PRODUCTS}/${id}`),
+
+    /** POST /products/:id/quantities — update or create single quantity tier */
+    manageQuantity: (id, data) =>
+        axiosClient.post(`${ENDPOINTS.PRODUCTS}/${id}/quantities`, data),
 };

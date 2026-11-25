@@ -5,3 +5,4 @@ export { default as ProductGallery } from "./ProductGallery";
 export { default as ProductProducerCard } from "./ProductProducerCard";
 export { default as ProductSpecsTable } from "./ProductSpecsTable";
 export { default as ProductInquiryModal } from "./ProductInquiryModal";
+export { default as FarmerProductForm } from "./FarmerProductForm";
