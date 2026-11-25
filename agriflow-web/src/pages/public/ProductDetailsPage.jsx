@@ -389,10 +389,13 @@ export default function ProductDetailsPage() {
                                 {cartSuccess && (
                                     <Alert
                                         variant="success"
-                                        className="rounded-3 mb-3 py-2 small"
+                                        className="rounded-3 mb-3 py-2 small d-flex justify-content-between align-items-center"
                                         style={{ backgroundColor: "var(--af-green-100)", color: "var(--af-green-900)" }}
                                     >
-                                        ✓ Ajouté à votre bon de commande !
+                                        <span>✓ Ajouté à votre panier !</span>
+                                        <Link to="/client/cart" className="fw-bold text-decoration-underline ms-2" style={{ color: "var(--af-green-950)" }}>
+                                            Voir mon panier →
+                                        </Link>
                                     </Alert>
                                 )}
 

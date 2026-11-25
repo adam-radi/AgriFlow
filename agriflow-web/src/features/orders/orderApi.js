@@ -8,6 +8,9 @@ export const orderAPI = {
     getOrder: (id) =>
         axiosClient.get(`${ENDPOINTS.ORDERS}/${id}`),
 
+    cancelOrder: (id) =>
+        axiosClient.post(`${ENDPOINTS.ORDERS}/${id}/cancel`),
+
     createOrder: (payload) =>
         axiosClient.post(ENDPOINTS.ORDERS, payload),
 

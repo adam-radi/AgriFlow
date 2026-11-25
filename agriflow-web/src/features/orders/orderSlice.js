@@ -41,6 +41,18 @@ export const fetchOrderById = createAsyncThunk(
     }
 );
 
+export const cancelOrder = createAsyncThunk(
+    "orders/cancel",
+    async (id, { rejectWithValue }) => {
+        try {
+            const res = await orderAPI.cancelOrder(id);
+            return unwrapData(res);
+        } catch (err) {
+            return rejectWithValue(err.response?.data?.message || err.response?.data || "Impossible d'annuler la commande");
+        }
+    }
+);
+
 export const fetchFarmerOrders = createAsyncThunk(
     "orders/fetchFarmerOrders",
     async (_, { rejectWithValue }) => {
@@ -128,6 +140,25 @@ const orderSlice = createSlice({
                 state.currentOrder = action.payload;
             })
             .addCase(fetchOrderById.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload;
+            });
+
+        builder
+            .addCase(cancelOrder.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(cancelOrder.fulfilled, (state, action) => {
+                state.loading = false;
+                const updated = action.payload;
+                if (state.currentOrder?.id === updated?.id) {
+                    state.currentOrder = updated;
+                }
+                state.orders = state.orders.map((o) => (o.id === updated?.id ? updated : o));
+                state.success = "Commande annulée avec succès.";
+            })
+            .addCase(cancelOrder.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload;
             });

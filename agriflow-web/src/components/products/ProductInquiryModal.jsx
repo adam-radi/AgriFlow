@@ -1,6 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSelector } from "react-redux";
 import { Modal, Row, Col } from "react-bootstrap";
 import { Button, Input } from "../common";
+import { selectUser } from "../../features/auth/authSelectors";
 
 /**
  * ProductInquiryModal — Dialogue de demande de cotation directe auprès de l'exploitant
@@ -12,6 +14,8 @@ export default function ProductInquiryModal({
     product,
     farmer,
 }) {
+    const authUser = useSelector(selectUser);
+
     const [form, setForm] = useState({
         name: "",
         businessName: "",
@@ -22,6 +26,18 @@ export default function ProductInquiryModal({
     const [submitted, setSubmitted] = useState(false);
     const [submitting, setSubmitting] = useState(false);
 
+    // Pré-remplissage avec les informations de l'acheteur connecté
+    useEffect(() => {
+        if (show && authUser) {
+            setForm((prev) => ({
+                ...prev,
+                name: prev.name || authUser.name || "",
+                businessName: prev.businessName || authUser.company_name || authUser.business_name || "",
+                contact: prev.contact || authUser.phone || authUser.email || "",
+            }));
+        }
+    }, [show, authUser]);
+
     const handleChange = (e) => {
         const { name, value } = e.target;
         setForm((prev) => ({ ...prev, [name]: value }));
@@ -31,11 +47,11 @@ export default function ProductInquiryModal({
         e.preventDefault();
         setSubmitting(true);
 
-        // Simulation de prise en charge côté client
+        // Simulation de prise en charge instantanée côté client
         setTimeout(() => {
             setSubmitting(false);
             setSubmitted(true);
-        }, 500);
+        }, 400);
     };
 
     const handleClose = () => {
