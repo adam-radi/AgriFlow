@@ -36,7 +36,8 @@ export default function CheckoutPage() {
     const navigate = useNavigate();
 
     const user = useSelector(selectUser);
-    const cartItems = useSelector(selectCartItems) || [];
+    const rawCartItems = useSelector(selectCartItems);
+    const cartItems = useMemo(() => rawCartItems || [], [rawCartItems]);
     const cartTotal = useSelector(selectCartTotal) || 0;
     const cartCount = useSelector(selectCartCount) || 0;
     const cartLoading = useSelector(selectCartLoading);
@@ -44,9 +45,12 @@ export default function CheckoutPage() {
     const orderError = useSelector((state) => state.orders.error);
 
     const [hasLoadedCart, setHasLoadedCart] = useState(false);
+    const defaultZone = cartItems[0]?.harvest?.product?.farmer?.zone || user?.city || "Casablanca-Settat";
     const [zone, setZone] = useState("");
     const [deliveryDate, setDeliveryDate] = useState("");
     const [notes, setNotes] = useState("");
+
+    const currentZone = zone || defaultZone;
 
     useEffect(() => {
         dispatch(fetchCart()).finally(() => {
@@ -57,17 +61,6 @@ export default function CheckoutPage() {
             dispatch(clearOrderSuccess());
         };
     }, [dispatch]);
-
-    // Initialisation par défaut de la région
-    useEffect(() => {
-        if (!zone && cartItems.length > 0) {
-            const defaultZone =
-                cartItems[0]?.harvest?.product?.farmer?.zone ||
-                user?.city ||
-                "Casablanca-Settat";
-            setZone(defaultZone);
-        }
-    }, [cartItems, user, zone]);
 
     // Redirection automatique si le panier est vide une fois chargé
     useEffect(() => {
@@ -81,7 +74,7 @@ export default function CheckoutPage() {
         dispatch(clearOrderError());
 
         const payload = {
-            zone: zone || "Casablanca-Settat",
+            zone: currentZone,
             delivery_date: deliveryDate || null,
             items: cartItems.map((item) => ({
                 harvest_id: item.harvest_id,

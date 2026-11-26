@@ -1,24 +1,36 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Modal, Form } from "react-bootstrap";
-import { fetchUsers, suspendUser, createDeliveryUser } from "../../app/store/slices/admin/adminSlice";
+import { Modal, Form, Alert } from "react-bootstrap";
+import {
+  fetchUsers,
+  suspendUser,
+  createDeliveryUser,
+  validateFarmer,
+  rejectFarmer,
+} from "../../app/store/slices/admin/adminSlice";
 import {
   selectAdminUsers,
   selectAdminLoading,
+  selectAdminError,
 } from "../../app/store/slices/admin/adminSelectors";
-import { Badge, EmptyState, LoadingState } from "../../components/common";
+import { Badge, EmptyState, LoadingState, Button } from "../../components/common";
 
 /**
- * AdminUsersPage — Gestion des utilisateurs plateforme (Design System AgriFlow)
+ * AdminUsersPage — Gestion des utilisateurs plateforme (Lot 11)
  */
 export default function AdminUsersPage() {
   const dispatch = useDispatch();
   const users = useSelector(selectAdminUsers) || [];
   const loading = useSelector(selectAdminLoading);
+  const error = useSelector(selectAdminError);
 
-  const [showModal, setShowModal] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [userToSuspend, setUserToSuspend] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedRoleFilter, setSelectedRoleFilter] = useState("all");
+  const [feedbackMsg, setFeedbackMsg] = useState(null);
+
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -27,9 +39,41 @@ export default function AdminUsersPage() {
     zone: "",
   });
 
-  const handleSuspend = (id) => {
-    if (window.confirm("Êtes-vous sûr de vouloir suspendre cet utilisateur ?")) {
-      dispatch(suspendUser(id));
+  useEffect(() => {
+    dispatch(fetchUsers());
+  }, [dispatch]);
+
+  const handleConfirmSuspend = async () => {
+    if (!userToSuspend) return;
+    const res = await dispatch(suspendUser(userToSuspend.id));
+    if (res.meta?.requestStatus === "fulfilled") {
+      setFeedbackMsg({ type: "success", text: `Le compte #${userToSuspend.id} (${userToSuspend.name}) a été suspendu avec succès.` });
+      dispatch(fetchUsers());
+    } else {
+      setFeedbackMsg({ type: "danger", text: "Impossible de suspendre cet utilisateur." });
+    }
+    setUserToSuspend(null);
+  };
+
+  const handleValidateFarmer = async (id) => {
+    const res = await dispatch(validateFarmer(id));
+    if (res.meta?.requestStatus === "fulfilled") {
+      setFeedbackMsg({ type: "success", text: `L'exploitant #${id} a été approuvé avec succès.` });
+      if (selectedUser?.id === id) {
+        setSelectedUser((prev) => ({ ...prev, farmer_status: "approved" }));
+      }
+      dispatch(fetchUsers());
+    }
+  };
+
+  const handleRejectFarmer = async (id) => {
+    const res = await dispatch(rejectFarmer(id));
+    if (res.meta?.requestStatus === "fulfilled") {
+      setFeedbackMsg({ type: "success", text: `Le dossier #${id} a été refusé.` });
+      if (selectedUser?.id === id) {
+        setSelectedUser((prev) => ({ ...prev, farmer_status: "rejected" }));
+      }
+      dispatch(fetchUsers());
     }
   };
 
@@ -37,11 +81,14 @@ export default function AdminUsersPage() {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  const handleSubmit = () => {
-    dispatch(createDeliveryUser(form)).then(() => {
-      setShowModal(false);
-      setForm({ name: "", email: "", password: "", phone: "", zone: "" });
-      dispatch(fetchUsers());
+  const handleSubmitDelivery = () => {
+    dispatch(createDeliveryUser(form)).then((res) => {
+      if (res.meta?.requestStatus === "fulfilled") {
+        setShowCreateModal(false);
+        setForm({ name: "", email: "", password: "", phone: "", zone: "" });
+        setFeedbackMsg({ type: "success", text: "Compte livreur logistique créé avec succès !" });
+        dispatch(fetchUsers());
+      }
     });
   };
 
@@ -51,7 +98,8 @@ export default function AdminUsersPage() {
       !searchTerm ||
       (u.name && u.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (u.email && u.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (u.phone && u.phone.includes(searchTerm));
+      (u.phone && u.phone.includes(searchTerm)) ||
+      (u.zone && u.zone.toLowerCase().includes(searchTerm.toLowerCase()));
 
     const matchesRole =
       selectedRoleFilter === "all" ||
@@ -66,10 +114,11 @@ export default function AdminUsersPage() {
   const farmersCount = users.filter((u) => u.role === "Farmer").length;
   const clientsCount = users.filter((u) => u.role === "Client").length;
   const livreursCount = users.filter((u) => u.role === "Livreur").length;
+  const adminsCount = users.filter((u) => u.role === "Admin").length;
 
   return (
     <div className="af-dashboard-container">
-      {/* ── 1. Welcome / Page Header ──────────────────────────────────── */}
+      {/* ── 1. Page Header ────────────────────────────────────────────── */}
       <div className="af-dashboard-header-row">
         <div className="af-dashboard-title-group">
           <div className="d-flex align-items-center gap-2 mb-1 flex-wrap">
@@ -87,7 +136,7 @@ export default function AdminUsersPage() {
           <button
             type="button"
             className="af-btn-primary-pill"
-            onClick={() => setShowModal(true)}
+            onClick={() => setShowCreateModal(true)}
           >
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <line x1="12" y1="5" x2="12" y2="19" />
@@ -98,11 +147,30 @@ export default function AdminUsersPage() {
         </div>
       </div>
 
+      {/* Notifications */}
+      {feedbackMsg && (
+        <Alert
+          variant={feedbackMsg.type}
+          dismissible
+          onClose={() => setFeedbackMsg(null)}
+          className="rounded-3 shadow-sm mb-4"
+        >
+          {feedbackMsg.text}
+        </Alert>
+      )}
+
+      {error && (
+        <Alert variant="danger" className="rounded-3 shadow-sm mb-4">
+          {typeof error === "string" ? error : "Erreur lors du chargement des utilisateurs."}
+        </Alert>
+      )}
+
       {/* ── 2. Top Stats Overview ─────────────────────────────────────── */}
       <div className="af-stats-row">
         <div className="af-stat-card-featured">
           <div className="af-stat-card-top">
             <span className="af-stat-card-label">Total Utilisateurs</span>
+            <span className="fs-5">👥</span>
           </div>
           <div className="af-stat-value">{users.length}</div>
           <div className="af-stat-pill">Comptes enregistrés</div>
@@ -111,14 +179,16 @@ export default function AdminUsersPage() {
         <div className="af-stat-card-white">
           <div className="af-stat-card-top">
             <span className="af-stat-card-label">Agriculteurs</span>
+            <span className="fs-5">🌾</span>
           </div>
           <div className="af-stat-value">{farmersCount}</div>
-          <div className="af-stat-pill success">Exploitants</div>
+          <div className="af-stat-pill success">Exploitants certifiés</div>
         </div>
 
         <div className="af-stat-card-white">
           <div className="af-stat-card-top">
             <span className="af-stat-card-label">Acheteurs Pro</span>
+            <span className="fs-5">🛒</span>
           </div>
           <div className="af-stat-value">{clientsCount}</div>
           <div className="af-stat-pill neutral">Commerces & Resto</div>
@@ -127,14 +197,15 @@ export default function AdminUsersPage() {
         <div className="af-stat-card-white">
           <div className="af-stat-card-top">
             <span className="af-stat-card-label">Livreurs & Logistique</span>
+            <span className="fs-5">🚚</span>
           </div>
           <div className="af-stat-value">{livreursCount}</div>
-          <span className="af-stat-subtitle-text">Transporteurs actifs</span>
+          <span className="af-stat-subtitle-text">{adminsCount} administrateur(s)</span>
         </div>
       </div>
 
       {/* ── 3. Filters & Search Bar ───────────────────────────────────── */}
-      <div className="af-panel-card p-3">
+      <div className="af-panel-card p-3 mb-4">
         <div className="d-flex flex-wrap gap-3 align-items-center justify-content-between">
           {/* Search bar */}
           <div className="af-buyer-search-input-wrap" style={{ maxWidth: 380 }}>
@@ -153,7 +224,7 @@ export default function AdminUsersPage() {
             <input
               type="text"
               className="af-buyer-search-input"
-              placeholder="Rechercher par nom, email, téléphone..."
+              placeholder="Rechercher par nom, email, téléphone, région..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -162,32 +233,31 @@ export default function AdminUsersPage() {
           {/* Role Filter Chips */}
           <div className="af-category-chips-row">
             {[
-              { id: "all", label: "Tous les rôles" },
-              { id: "Farmer", label: "🌾 Agriculteurs" },
-              { id: "Client", label: "🛒 Acheteurs Pro" },
-              { id: "Livreur", label: "🚚 Livreurs" },
-              { id: "Admin", label: "🛡️ Administrateurs" },
-            ].map((chip) => (
-              <button
-                key={chip.id}
-                type="button"
-                className={`af-category-chip ${
-                  selectedRoleFilter === chip.id ? "active" : ""
-                }`}
-                style={{
-                  backgroundColor:
-                    selectedRoleFilter === chip.id ? "#15372F" : "#ffffff",
-                  color: selectedRoleFilter === chip.id ? "#ffffff" : "#3b4e43",
-                  border:
-                    selectedRoleFilter === chip.id
-                      ? "1px solid #15372F"
-                      : "1px solid #dce5df",
-                }}
-                onClick={() => setSelectedRoleFilter(chip.id)}
-              >
-                {chip.label}
-              </button>
-            ))}
+              { id: "all", label: `Tous (${users.length})` },
+              { id: "Farmer", label: `🌾 Agriculteurs (${farmersCount})` },
+              { id: "Client", label: `🛒 Acheteurs Pro (${clientsCount})` },
+              { id: "Livreur", label: `🚚 Livreurs (${livreursCount})` },
+              { id: "Admin", label: `🛡️ Admins (${adminsCount})` },
+            ].map((chip) => {
+              const isActive = selectedRoleFilter === chip.id;
+              return (
+                <button
+                  key={chip.id}
+                  type="button"
+                  className={`af-category-chip ${isActive ? "active" : ""}`}
+                  style={{
+                    backgroundColor: isActive ? "var(--af-primary-forest, #15372F)" : "#ffffff",
+                    color: isActive ? "#ffffff" : "var(--af-ink-900, #1D2924)",
+                    border: isActive
+                      ? "1px solid var(--af-primary-forest, #15372F)"
+                      : "1px solid var(--af-border, #E2E9E3)",
+                  }}
+                  onClick={() => setSelectedRoleFilter(chip.id)}
+                >
+                  {chip.label}
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>
@@ -198,7 +268,7 @@ export default function AdminUsersPage() {
           <div>
             <h2 className="af-panel-title">Liste des Utilisateurs</h2>
             <span className="af-stat-subtitle-text">
-              {filteredUsers.length} utilisateur{filteredUsers.length > 1 ? "s" : ""} affiché{filteredUsers.length > 1 ? "s" : ""}
+              {filteredUsers.length} compte{filteredUsers.length > 1 ? "s" : ""} affiché{filteredUsers.length > 1 ? "s" : ""}
             </span>
           </div>
         </div>
@@ -214,13 +284,13 @@ export default function AdminUsersPage() {
                   <th>Utilisateur</th>
                   <th>Contact</th>
                   <th>Rôle</th>
-                  <th>Statut Exploitant</th>
+                  <th>Vérification / Statut</th>
                   <th className="text-end">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredUsers.map((user) => {
-                  const initials = (user.name || "U")
+                {filteredUsers.map((u) => {
+                  const initials = (u.name || "U")
                     .trim()
                     .split(/\s+/)
                     .slice(0, 2)
@@ -228,8 +298,8 @@ export default function AdminUsersPage() {
                     .join("");
 
                   return (
-                    <tr key={user.id}>
-                      <td className="fw-bold text-muted">#{user.id}</td>
+                    <tr key={u.id}>
+                      <td className="fw-bold text-muted">#{u.id}</td>
                       <td>
                         <div className="d-flex align-items-center gap-3">
                           <div
@@ -243,68 +313,80 @@ export default function AdminUsersPage() {
                             {initials}
                           </div>
                           <div>
-                            <div className="fw-semibold text-dark">{user.name || "—"}</div>
-                            <small className="text-muted">{user.zone || "Maroc"}</small>
+                            <div className="fw-semibold text-dark">{u.name || "—"}</div>
+                            <small className="text-muted">📍 {u.zone || "Maroc"}</small>
                           </div>
                         </div>
                       </td>
                       <td>
-                        <div>{user.email}</div>
-                        <small className="text-muted">{user.phone || "—"}</small>
+                        <div>{u.email}</div>
+                        <small className="text-muted">{u.phone || "—"}</small>
                       </td>
                       <td>
                         <Badge
                           variant={
-                            user.role === "Farmer"
+                            u.role === "Farmer"
                               ? "success"
-                              : user.role === "Client"
+                              : u.role === "Client"
                               ? "info"
-                              : user.role === "Livreur"
+                              : u.role === "Livreur"
                               ? "warning"
                               : "primary"
                           }
                           size="sm"
                         >
-                          {user.role === "Farmer"
+                          {u.role === "Farmer"
                             ? "Agriculteur"
-                            : user.role === "Client"
+                            : u.role === "Client"
                             ? "Acheteur Pro"
-                            : user.role === "Livreur"
+                            : u.role === "Livreur"
                             ? "Livreur"
-                            : user.role}
+                            : u.role}
                         </Badge>
                       </td>
                       <td>
-                        {user.role === "Farmer" ? (
+                        {u.role === "Farmer" ? (
                           <Badge
                             variant={
-                              user.farmer_status === "approved"
+                              u.farmer_status === "approved"
                                 ? "success"
-                                : user.farmer_status === "rejected"
+                                : u.farmer_status === "rejected"
                                 ? "danger"
                                 : "warning"
                             }
                             size="sm"
                           >
-                            {user.farmer_status === "approved"
+                            {u.farmer_status === "approved"
                               ? "Certifié ✓"
-                              : user.farmer_status === "rejected"
+                              : u.farmer_status === "rejected"
                               ? "Rejeté ✗"
                               : "En attente ⏳"}
                           </Badge>
                         ) : (
-                          <span className="text-muted small">—</span>
+                          <span className="text-muted small">Standard</span>
                         )}
                       </td>
                       <td className="text-end">
-                        <button
-                          type="button"
-                          className="btn btn-sm btn-outline-danger rounded-pill px-3 py-1"
-                          style={{ fontSize: "0.78rem" }}
-                          onClick={() => handleSuspend(user.id)}
-                        >
-                          Suspendre
-                        </button>
+                        <div className="d-inline-flex gap-2">
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-outline-secondary rounded-pill px-3 py-1"
+                            style={{ fontSize: "0.8rem" }}
+                            onClick={() => setSelectedUser(u)}
+                          >
+                            Consulter
+                          </button>
+                          {u.role !== "Admin" && (
+                            <button
+                              type="button"
+                              className="btn btn-sm btn-outline-danger rounded-pill px-3 py-1"
+                              style={{ fontSize: "0.8rem" }}
+                              onClick={() => setUserToSuspend(u)}
+                            >
+                              Suspendre
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );
@@ -321,8 +403,135 @@ export default function AdminUsersPage() {
         )}
       </div>
 
-      {/* ── 5. Modal Création Livreur ──────────────────────────────────── */}
-      <Modal show={showModal} onHide={() => setShowModal(false)} centered>
+      {/* ── 5. Modal Détails Utilisateur ───────────────────────────────── */}
+      <Modal show={!!selectedUser} onHide={() => setSelectedUser(null)} centered>
+        <Modal.Header closeButton style={{ borderBottom: "1px solid #edf2ee" }}>
+          <Modal.Title style={{ fontSize: "1.15rem", fontWeight: 700, color: "var(--af-primary-forest)" }}>
+            Dossier Utilisateur #{selectedUser?.id}
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body className="p-4">
+          {selectedUser && (
+            <div className="d-flex flex-column gap-3">
+              <div>
+                <span className="text-muted small d-block">Nom complet</span>
+                <strong className="fs-6" style={{ color: "var(--af-green-950, #15372F)" }}>
+                  {selectedUser.name}
+                </strong>
+              </div>
+              <div className="row g-2">
+                <div className="col-6">
+                  <span className="text-muted small d-block">Email</span>
+                  <span className="small">{selectedUser.email}</span>
+                </div>
+                <div className="col-6">
+                  <span className="text-muted small d-block">Téléphone</span>
+                  <span className="small">{selectedUser.phone || "Non renseigné"}</span>
+                </div>
+              </div>
+              <div className="row g-2">
+                <div className="col-6">
+                  <span className="text-muted small d-block">Rôle</span>
+                  <Badge variant="primary" size="sm">
+                    {selectedUser.role}
+                  </Badge>
+                </div>
+                <div className="col-6">
+                  <span className="text-muted small d-block">Région / Zone</span>
+                  <span className="small">📍 {selectedUser.zone || "Maroc"}</span>
+                </div>
+              </div>
+              {selectedUser.role === "Farmer" && (
+                <div className="p-3 rounded-3" style={{ backgroundColor: "var(--af-canvas, #F6F8F5)" }}>
+                  <span className="text-muted small d-block mb-1">Statut d&apos;accréditation agricole :</span>
+                  <div className="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                    <Badge
+                      variant={
+                        selectedUser.farmer_status === "approved"
+                          ? "success"
+                          : selectedUser.farmer_status === "rejected"
+                          ? "danger"
+                          : "warning"
+                      }
+                      size="md"
+                    >
+                      {selectedUser.farmer_status === "approved"
+                        ? "Exploitant Certifié ✓"
+                        : selectedUser.farmer_status === "rejected"
+                        ? "Dossier Rejeté"
+                        : "En cours d'examen ⏳"}
+                    </Badge>
+                    <div className="d-flex gap-2">
+                      {selectedUser.farmer_status !== "approved" && (
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-success rounded-pill px-3"
+                          onClick={() => handleValidateFarmer(selectedUser.id)}
+                        >
+                          Approuver
+                        </button>
+                      )}
+                      {selectedUser.farmer_status !== "rejected" && (
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-outline-danger rounded-pill px-3"
+                          onClick={() => handleRejectFarmer(selectedUser.id)}
+                        >
+                          Rejeter
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+              <div>
+                <span className="text-muted small d-block">Date d&apos;inscription</span>
+                <span className="small">
+                  {selectedUser.created_at
+                    ? new Date(selectedUser.created_at).toLocaleDateString("fr-FR", {
+                        day: "numeric",
+                        month: "long",
+                        year: "numeric",
+                      })
+                    : "—"}
+                </span>
+              </div>
+            </div>
+          )}
+        </Modal.Body>
+        <Modal.Footer style={{ borderTop: "1px solid #edf2ee" }}>
+          <Button variant="secondary" pill onClick={() => setSelectedUser(null)}>
+            Fermer
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* ── 6. Modal Confirmation Suspension ───────────────────────────── */}
+      <Modal show={!!userToSuspend} onHide={() => setUserToSuspend(null)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title className="h6 fw-bold text-danger">
+            Confirmer la suspension du compte
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <p className="mb-0">
+            Êtes-vous certain de vouloir suspendre le compte de{" "}
+            <strong>{userToSuspend?.name}</strong> (#{userToSuspend?.id}) ?
+            L&apos;utilisateur ne pourra plus se connecter ni publier d&apos;offres sur la plateforme.
+          </p>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="outline" pill onClick={() => setUserToSuspend(null)}>
+            Annuler
+          </Button>
+          <Button variant="danger" pill onClick={handleConfirmSuspend}>
+            Confirmer la suspension
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* ── 7. Modal Création Livreur ──────────────────────────────────── */}
+      <Modal show={showCreateModal} onHide={() => setShowCreateModal(false)} centered>
         <Modal.Header closeButton style={{ borderBottom: "1px solid #edf2ee" }}>
           <Modal.Title style={{ fontSize: "1.15rem", fontWeight: 700, color: "var(--af-primary-forest)" }}>
             Créer un Compte Livreur Logistique
@@ -331,17 +540,18 @@ export default function AdminUsersPage() {
         <Modal.Body className="p-4">
           <Form>
             <Form.Group className="mb-3">
-              <Form.Label className="small fw-semibold text-muted">Nom complet</Form.Label>
+              <Form.Label className="small fw-semibold text-muted">Nom complet *</Form.Label>
               <Form.Control
                 name="name"
                 value={form.name}
                 onChange={handleChange}
                 placeholder="Ex: Youssef Mansouri"
                 className="rounded-3"
+                required
               />
             </Form.Group>
             <Form.Group className="mb-3">
-              <Form.Label className="small fw-semibold text-muted">Adresse e-mail</Form.Label>
+              <Form.Label className="small fw-semibold text-muted">Adresse e-mail *</Form.Label>
               <Form.Control
                 name="email"
                 type="email"
@@ -349,10 +559,11 @@ export default function AdminUsersPage() {
                 onChange={handleChange}
                 placeholder="livreur@agriflow.ma"
                 className="rounded-3"
+                required
               />
             </Form.Group>
             <Form.Group className="mb-3">
-              <Form.Label className="small fw-semibold text-muted">Mot de passe</Form.Label>
+              <Form.Label className="small fw-semibold text-muted">Mot de passe *</Form.Label>
               <Form.Control
                 name="password"
                 type="password"
@@ -360,6 +571,7 @@ export default function AdminUsersPage() {
                 onChange={handleChange}
                 placeholder="Minimum 8 caractères"
                 className="rounded-3"
+                required
               />
             </Form.Group>
             <Form.Group className="mb-3">
@@ -373,7 +585,7 @@ export default function AdminUsersPage() {
               />
             </Form.Group>
             <Form.Group className="mb-3">
-              <Form.Label className="small fw-semibold text-muted">Zone de livraison / Région</Form.Label>
+              <Form.Label className="small fw-semibold text-muted">Zone logistique / Région</Form.Label>
               <Form.Control
                 name="zone"
                 value={form.zone}
@@ -385,21 +597,17 @@ export default function AdminUsersPage() {
           </Form>
         </Modal.Body>
         <Modal.Footer style={{ borderTop: "1px solid #edf2ee" }}>
-          <button
-            type="button"
-            className="af-btn-secondary-pill"
-            onClick={() => setShowModal(false)}
-          >
+          <Button variant="outline" pill onClick={() => setShowCreateModal(false)}>
             Annuler
-          </button>
-          <button
-            type="button"
-            className="af-btn-primary-pill"
-            onClick={handleSubmit}
+          </Button>
+          <Button
+            variant="primary"
+            pill
+            onClick={handleSubmitDelivery}
             disabled={!form.name || !form.email || !form.password}
           >
             Créer le Livreur
-          </button>
+          </Button>
         </Modal.Footer>
       </Modal>
     </div>

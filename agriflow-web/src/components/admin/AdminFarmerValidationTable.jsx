@@ -3,15 +3,24 @@ import { Modal, Form, Spinner } from "react-bootstrap";
 import VerificationStatusBadge from "../verification/VerificationStatusBadge";
 import { Button } from "../common";
 
+const COMMON_REJECTION_REASONS = [
+    "Attestation d'inscription agricole ou certificat d'exploitation illisible",
+    "Pièce d'identité (CIN/Passeport) expirée ou non conforme",
+    "Incohérence entre l'identité déclarée et les justificatifs fournis",
+    "Coordonnées de l'exploitation ou zone géographique incomplètes",
+];
+
+/**
+ * AdminFarmerValidationTable — Table d'instruction des dossiers de vérification exploitants
+ */
 export default function AdminFarmerValidationTable({
     farmers = [],
     loading,
     onValidate,
     onReject,
-    onSuspend,
 }) {
     const [selectedFarmer, setSelectedFarmer] = useState(null);
-    const [actionType, setActionType] = useState(null); // 'reject' | 'details'
+    const [actionType, setActionType] = useState(null); // 'reject' | 'details' | 'approve'
     const [rejectionReason, setRejectionReason] = useState("");
 
     const handleConfirmReject = () => {
@@ -23,103 +32,128 @@ export default function AdminFarmerValidationTable({
         }
     };
 
-    if (loading) {
+    const handleConfirmApprove = () => {
+        if (selectedFarmer) {
+            onValidate?.(selectedFarmer.id);
+            setSelectedFarmer(null);
+            setActionType(null);
+        }
+    };
+
+    if (loading && farmers.length === 0) {
         return (
             <div className="text-center py-5">
                 <Spinner animation="border" variant="success" />
-                <p className="small text-muted mt-2">Chargement des comptes exploitants...</p>
+                <p className="small text-muted mt-2">Chargement des dossiers en cours...</p>
             </div>
         );
     }
 
     return (
         <>
-            <div className="af-table-wrap">
-                <table className="af-table">
+            <div className="table-responsive">
+                <table className="table align-middle af-dashboard-table mb-0">
                     <thead>
                         <tr>
                             <th>ID</th>
-                            <th>Exploitant</th>
-                            <th>Contact</th>
-                            <th>Zone</th>
-                            <th>Statut Vérification</th>
-                            <th className="text-end">Actions</th>
+                            <th>Exploitant & Exploitation</th>
+                            <th>Coordonnées</th>
+                            <th>Zone Agricole</th>
+                            <th>Statut Réglementaire</th>
+                            <th className="text-end">Actions Administratives</th>
                         </tr>
                     </thead>
                     <tbody>
                         {farmers.length === 0 ? (
                             <tr>
-                                <td colSpan={6} className="text-center text-muted py-4">
-                                    Aucun exploitant agricole trouvé.
+                                <td colSpan={6} className="text-center text-muted py-5">
+                                    <div className="fs-3 mb-2">🛡️</div>
+                                    <div className="fw-semibold">Aucun dossier à afficher</div>
+                                    <small className="text-muted">Aucun exploitant ne correspond aux critères sélectionnés.</small>
                                 </td>
                             </tr>
                         ) : (
                             farmers.map((farmer) => {
                                 const status = farmer.farmer_status || "pending";
+                                const initials = (farmer.name || "A")
+                                    .trim()
+                                    .split(/\s+/)
+                                    .slice(0, 2)
+                                    .map((part) => part.charAt(0).toUpperCase())
+                                    .join("");
+
                                 return (
                                     <tr key={farmer.id}>
                                         <td className="fw-mono text-muted">#{farmer.id}</td>
                                         <td>
-                                            <div className="fw-bold" style={{ color: "var(--af-ink-950, #1d2924)" }}>
-                                                {farmer.name || "—"}
+                                            <div className="d-flex align-items-center gap-3">
+                                                <div
+                                                    className="af-list-item-avatar"
+                                                    style={{
+                                                        backgroundColor: "#eaf3ec",
+                                                        color: "#194638",
+                                                        fontWeight: 700,
+                                                    }}
+                                                >
+                                                    {initials}
+                                                </div>
+                                                <div>
+                                                    <div className="fw-bold" style={{ color: "var(--af-ink-950, #1d2924)" }}>
+                                                        {farmer.name || "—"}
+                                                    </div>
+                                                    <div className="small text-muted">{farmer.email}</div>
+                                                </div>
                                             </div>
-                                            <div className="small text-muted">{farmer.email}</div>
                                         </td>
                                         <td>
-                                            <span className="small">{farmer.phone || "—"}</span>
+                                            <div className="small fw-semibold">{farmer.phone || "Non renseigné"}</div>
                                         </td>
                                         <td>
-                                            <span className="small">{farmer.zone || "—"}</span>
+                                            <span className="small">📍 {farmer.zone || "Maroc"}</span>
                                         </td>
                                         <td>
                                             <VerificationStatusBadge status={status} />
                                         </td>
                                         <td className="text-end">
-                                            <div className="d-inline-flex gap-1">
-                                                <Button
-                                                    variant="secondary"
-                                                    size="sm"
+                                            <div className="d-inline-flex gap-2">
+                                                <button
+                                                    type="button"
+                                                    className="btn btn-sm btn-outline-secondary rounded-pill px-3 py-1"
+                                                    style={{ fontSize: "0.8rem" }}
                                                     onClick={() => {
                                                         setSelectedFarmer(farmer);
                                                         setActionType("details");
                                                     }}
                                                 >
-                                                    Détails
-                                                </Button>
+                                                    Examiner
+                                                </button>
 
                                                 {status !== "approved" && (
-                                                    <Button
-                                                        variant="primary"
-                                                        size="sm"
-                                                        onClick={() => onValidate?.(farmer.id)}
+                                                    <button
+                                                        type="button"
+                                                        className="btn btn-sm btn-success rounded-pill px-3 py-1"
+                                                        style={{ fontSize: "0.8rem", backgroundColor: "var(--af-primary-forest, #15372F)", borderColor: "var(--af-primary-forest, #15372F)" }}
+                                                        onClick={() => {
+                                                            setSelectedFarmer(farmer);
+                                                            setActionType("approve");
+                                                        }}
                                                     >
-                                                        ✓ Approuver
-                                                    </Button>
+                                                        ✓ Valider
+                                                    </button>
                                                 )}
 
                                                 {status !== "rejected" && (
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        style={{ color: "var(--af-danger, #b64242)" }}
+                                                    <button
+                                                        type="button"
+                                                        className="btn btn-sm btn-outline-danger rounded-pill px-3 py-1"
+                                                        style={{ fontSize: "0.8rem" }}
                                                         onClick={() => {
                                                             setSelectedFarmer(farmer);
                                                             setActionType("reject");
                                                         }}
                                                     >
                                                         ✕ Refuser
-                                                    </Button>
-                                                )}
-
-                                                {onSuspend && (
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        style={{ color: "var(--af-warning, #a96d17)" }}
-                                                        onClick={() => onSuspend?.(farmer.id)}
-                                                    >
-                                                        Suspendre
-                                                    </Button>
+                                                    </button>
                                                 )}
                                             </div>
                                         </td>
@@ -131,7 +165,7 @@ export default function AdminFarmerValidationTable({
                 </table>
             </div>
 
-            {/* Modal Détails */}
+            {/* Modal Examen Détails Dossier */}
             <Modal
                 show={actionType === "details"}
                 onHide={() => {
@@ -140,36 +174,54 @@ export default function AdminFarmerValidationTable({
                 }}
                 centered
             >
-                <Modal.Header closeButton>
-                    <Modal.Title className="h6 fw-bold">
-                        Dossier Exploitante #{selectedFarmer?.id} — {selectedFarmer?.name}
+                <Modal.Header closeButton style={{ borderBottom: "1px solid #edf2ee" }}>
+                    <Modal.Title style={{ fontSize: "1.15rem", fontWeight: 700, color: "var(--af-primary-forest)" }}>
+                        Dossier Exploitant #{selectedFarmer?.id} — {selectedFarmer?.name}
                     </Modal.Title>
                 </Modal.Header>
-                <Modal.Body>
+                <Modal.Body className="p-4">
                     {selectedFarmer && (
-                        <div className="af-stack gap-2 small">
+                        <div className="d-flex flex-column gap-3 small">
                             <div>
-                                <span className="text-muted d-block">Nom :</span>
-                                <strong className="fs-6">{selectedFarmer.name}</strong>
+                                <span className="text-muted d-block">Nom de l&apos;exploitant :</span>
+                                <strong className="fs-6" style={{ color: "var(--af-green-950, #15372F)" }}>
+                                    {selectedFarmer.name}
+                                </strong>
                             </div>
-                            <div>
-                                <span className="text-muted d-block">Email :</span>
-                                <span>{selectedFarmer.email}</span>
+                            <div className="row g-2">
+                                <div className="col-6">
+                                    <span className="text-muted d-block">Email professionnel :</span>
+                                    <span>{selectedFarmer.email}</span>
+                                </div>
+                                <div className="col-6">
+                                    <span className="text-muted d-block">Téléphone :</span>
+                                    <span>{selectedFarmer.phone || "Non renseigné"}</span>
+                                </div>
                             </div>
-                            <div>
-                                <span className="text-muted d-block">Téléphone :</span>
-                                <span>{selectedFarmer.phone || "Non renseigné"}</span>
+                            <div className="row g-2">
+                                <div className="col-6">
+                                    <span className="text-muted d-block">Bassin agricole :</span>
+                                    <span>📍 {selectedFarmer.zone || "Région Maroc"}</span>
+                                </div>
+                                <div className="col-6">
+                                    <span className="text-muted d-block">Statut de conformité :</span>
+                                    <VerificationStatusBadge status={selectedFarmer.farmer_status || "pending"} />
+                                </div>
                             </div>
-                            <div>
-                                <span className="text-muted d-block">Zone de production :</span>
-                                <span>{selectedFarmer.zone || "Non renseignée"}</span>
+
+                            {/* Section Confidentialité des documents */}
+                            <div className="p-3 rounded-3 mt-2" style={{ backgroundColor: "var(--af-canvas, #F6F8F5)", border: "1px solid var(--af-border, #E2E9E3)" }}>
+                                <div className="d-flex align-items-center gap-2 mb-1">
+                                    <span>🔒</span>
+                                    <strong style={{ color: "var(--af-green-900, #194638)" }}>Pièces justificatives privées</strong>
+                                </div>
+                                <p className="text-muted mb-0" style={{ fontSize: "0.82rem" }}>
+                                    Conformément aux règles de sécurité AgriFlow, les attestations légales (CIN, Registre Agricole) sont stockées de façon sécurisée et privée.
+                                </p>
                             </div>
+
                             <div>
-                                <span className="text-muted d-block">Statut actuel :</span>
-                                <VerificationStatusBadge status={selectedFarmer.farmer_status || "pending"} />
-                            </div>
-                            <div>
-                                <span className="text-muted d-block">Date d'inscription :</span>
+                                <span className="text-muted d-block">Date de soumission :</span>
                                 <span>
                                     {selectedFarmer.created_at
                                         ? new Date(selectedFarmer.created_at).toLocaleDateString("fr-FR", {
@@ -183,10 +235,10 @@ export default function AdminFarmerValidationTable({
                         </div>
                     )}
                 </Modal.Body>
-                <Modal.Footer>
+                <Modal.Footer style={{ borderTop: "1px solid #edf2ee" }}>
                     <Button
                         variant="secondary"
-                        size="sm"
+                        pill
                         onClick={() => {
                             setSelectedFarmer(null);
                             setActionType(null);
@@ -197,12 +249,43 @@ export default function AdminFarmerValidationTable({
                 </Modal.Footer>
             </Modal>
 
+            {/* Modal Confirmation Validation */}
+            <Modal
+                show={actionType === "approve"}
+                onHide={() => {
+                    setSelectedFarmer(null);
+                    setActionType(null);
+                }}
+                centered
+            >
+                <Modal.Header closeButton>
+                    <Modal.Title className="h6 fw-bold text-success">
+                        Valider l&apos;accréditation de l&apos;exploitant
+                    </Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    <p className="mb-0">
+                        Voulez-vous approuver le dossier de <strong>{selectedFarmer?.name}</strong> (#{selectedFarmer?.id}) ?
+                        L&apos;exploitant recevra immédiatement le statut <strong>Certifié ✓</strong> et pourra publier ses récoltes sur la marketplace.
+                    </p>
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button variant="outline" pill onClick={() => { setSelectedFarmer(null); setActionType(null); }}>
+                        Annuler
+                    </Button>
+                    <Button variant="primary" pill onClick={handleConfirmApprove}>
+                        Confirmer l&apos;approbation
+                    </Button>
+                </Modal.Footer>
+            </Modal>
+
             {/* Modal Refus avec Motif */}
             <Modal
                 show={actionType === "reject"}
                 onHide={() => {
                     setSelectedFarmer(null);
                     setActionType(null);
+                    setRejectionReason("");
                 }}
                 centered
             >
@@ -213,15 +296,34 @@ export default function AdminFarmerValidationTable({
                 </Modal.Header>
                 <Modal.Body>
                     <p className="small text-muted mb-3">
-                        Veuillez préciser la raison du refus pour permettre à l'exploitant de corriger ses informations
-                        ou de téléverser des justificatifs valides.
+                        Veuillez préciser la raison du refus pour permettre à l&apos;exploitant de corriger ses informations et de renouveler sa soumission.
                     </p>
+
+                    <div className="mb-3">
+                        <label className="small fw-semibold text-muted mb-2 d-block">
+                            Motifs fréquents de non-conformité :
+                        </label>
+                        <div className="d-flex flex-column gap-1">
+                            {COMMON_REJECTION_REASONS.map((r, i) => (
+                                <button
+                                    key={i}
+                                    type="button"
+                                    className="btn btn-sm btn-outline-secondary text-start rounded-3 py-1 px-2"
+                                    style={{ fontSize: "0.8rem" }}
+                                    onClick={() => setRejectionReason(r)}
+                                >
+                                    • {r}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
                     <Form.Group>
-                        <Form.Label className="small fw-semibold">Motif du refus</Form.Label>
+                        <Form.Label className="small fw-semibold">Motif explicatif personnalisé *</Form.Label>
                         <Form.Control
                             as="textarea"
                             rows={3}
-                            placeholder="ex. Pièce d'identité expirée ou attestation d'inscription agricole illisible."
+                            placeholder="Précisez les pièces manquantes ou illisibles..."
                             value={rejectionReason}
                             onChange={(e) => setRejectionReason(e.target.value)}
                         />
@@ -230,17 +332,19 @@ export default function AdminFarmerValidationTable({
                 <Modal.Footer>
                     <Button
                         variant="secondary"
-                        size="sm"
+                        pill
                         onClick={() => {
                             setSelectedFarmer(null);
                             setActionType(null);
+                            setRejectionReason("");
                         }}
                     >
                         Annuler
                     </Button>
                     <Button
                         variant="danger"
-                        size="sm"
+                        pill
+                        disabled={!rejectionReason.trim()}
                         onClick={handleConfirmReject}
                     >
                         Confirmer le refus

@@ -24,7 +24,8 @@ const FILTER_TABS = [
 export default function OrdersPage() {
     const dispatch = useDispatch();
     const navigate = useNavigate();
-    const orders = useSelector(selectOrders) || [];
+    const rawOrders = useSelector(selectOrders);
+    const orders = useMemo(() => rawOrders || [], [rawOrders]);
     const loading = useSelector(selectOrdersLoading);
     const error = useSelector(selectOrdersError);
 

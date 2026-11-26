@@ -14,9 +14,9 @@ import { selectUser } from "../../features/auth/authSelectors";
 import { Badge, EmptyState, LoadingState } from "../../components/common";
 
 /**
- * AdminDashboard — Tableau de bord officiel de supervision AgriFlow
- * Conçu avec 100% de la même identité visuelle et structure que le Dashboard Agriculteur :
- * Header d'accueil premium, 4 cartes métriques sobrie, grilles de suivi en direct et actions rapides.
+ * AdminDashboard — Tableau de bord officiel de supervision AgriFlow (Lot 11)
+ * Conçu avec 100% de la même identité visuelle et structure que les Dashboards Agriculteur & Acheteur :
+ * Header d'accueil premium, 4 cartes métriques sobres, grilles de suivi en direct et actions rapides.
  */
 export default function AdminDashboard() {
   const dispatch = useDispatch();
@@ -38,7 +38,11 @@ export default function AdminDashboard() {
 
   const pendingOrders = orders.filter((o) => o.status === "pending");
   const completedOrders = orders.filter((o) => o.status === "delivered" || o.status === "completed");
-  const pendingVerifications = farmers.filter((f) => (f.farmer_status || "pending") === "pending");
+  
+  // Nombre réel de dossiers en attente
+  const pendingVerificationsCount =
+    stats.pending_farmers ??
+    farmers.filter((f) => (f.farmer_status || "pending") === "pending").length;
 
   const displayName = user?.name || "Administrateur";
 
@@ -65,16 +69,14 @@ export default function AdminDashboard() {
               <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
               <polyline points="9 12 11 14 15 10" />
             </svg>
-            Vérifications B2B ({pendingVerifications.length})
+            Vérifications ({pendingVerificationsCount})
           </Link>
 
-          <Link to="/admin/orders" className="af-btn-secondary-pill">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <circle cx="9" cy="21" r="1" />
-              <circle cx="20" cy="21" r="1" />
-              <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+          <Link to="/admin/products" className="af-btn-secondary-pill">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
             </svg>
-            Toutes les commandes
+            Modérer le catalogue
           </Link>
         </div>
       </div>
@@ -92,7 +94,7 @@ export default function AdminDashboard() {
         {/* Card 1: Volume d'affaires / Revenue (Featured Dark Green Card) */}
         <div className="af-stat-card-featured">
           <div className="af-stat-card-top">
-            <span className="af-stat-card-label">Volume de Ventes</span>
+            <span className="af-stat-card-label">Volume Financier</span>
             <Link
               to="/admin/orders"
               className="af-stat-arrow-btn"
@@ -107,14 +109,14 @@ export default function AdminDashboard() {
               : `${stats.total_orders ?? orders.length} Commandes`}
           </div>
           <div className="af-stat-pill">
-            <span>{stats.total_orders ?? orders.length}</span> commandes traitées
+            <span>{stats.total_orders ?? orders.length}</span> commande{stats.total_orders > 1 ? "s" : ""} au total
           </div>
         </div>
 
         {/* Card 2: Utilisateurs Inscrits */}
         <div className="af-stat-card-white">
           <div className="af-stat-card-top">
-            <span className="af-stat-card-label">Utilisateurs Inscrits</span>
+            <span className="af-stat-card-label">Utilisateurs Plateforme</span>
             <Link
               to="/admin/users"
               className="af-stat-arrow-btn"
@@ -127,7 +129,7 @@ export default function AdminDashboard() {
             {stats.total_users ?? users.length ?? 0}
           </div>
           <div className="af-stat-pill success">
-            <span>{stats.total_farmers ?? farmers.length ?? 0}</span> agriculteurs
+            <span>{stats.total_farmers ?? farmers.length ?? 0}</span> exploitants · <span>{stats.total_customers ?? 0}</span> acheteurs
           </div>
         </div>
 
@@ -147,7 +149,7 @@ export default function AdminDashboard() {
             {stats.total_products ?? "—"}
           </div>
           <div className="af-stat-pill neutral">
-            Circuit court vérifié
+            <span>{stats.active_harvests ?? 0}</span> récolte{stats.active_harvests > 1 ? "s" : ""} active{stats.active_harvests > 1 ? "s" : ""}
           </div>
         </div>
 
@@ -164,10 +166,10 @@ export default function AdminDashboard() {
             </Link>
           </div>
           <div className="af-stat-value">
-            {pendingOrders.length}
+            {stats.delivered_orders ?? completedOrders.length}
           </div>
           <span className="af-stat-subtitle-text">
-            {completedOrders.length} commande(s) livrée(s)
+            {pendingOrders.length} en attente de validation
           </span>
         </div>
       </div>
@@ -210,12 +212,12 @@ export default function AdminDashboard() {
                           <strong>#{order.id}</strong>
                         </td>
                         <td>
-                          <div className="fw-semibold">{order.client_name || order.user?.name || "Acheteur Pro"}</div>
-                          <small className="text-muted">{order.city || "Maroc"}</small>
+                          <div className="fw-semibold">{order.customer?.name || order.client_name || order.user?.name || "Acheteur Pro"}</div>
+                          <small className="text-muted">{order.zone || order.city || "Maroc"}</small>
                         </td>
                         <td>
                           <strong style={{ color: "var(--af-primary-forest)" }}>
-                            {order.total ? `${Number(order.total).toLocaleString()} DH` : "—"}
+                            {order.total_amount ? `${Number(order.total_amount).toLocaleString()} DH` : order.total ? `${Number(order.total).toLocaleString()} DH` : "—"}
                           </strong>
                         </td>
                         <td>
@@ -361,7 +363,7 @@ export default function AdminDashboard() {
             </div>
             <div>
               <div className="fw-bold" style={{ color: "var(--af-primary-forest)" }}>
-                {pendingVerifications.length} dossier(s) en attente d&apos;examen
+                {pendingVerificationsCount} dossier(s) en attente d&apos;examen
               </div>
               <div className="small text-muted">
                 Validation des attestations d&apos;exploitation, CIN, RC et conformité réglementaire.
@@ -386,7 +388,7 @@ export default function AdminDashboard() {
             <span className="af-quick-action-icon">🛡️</span>
             <div>
               <div className="af-quick-action-title">Vérifications B2B</div>
-              <div className="af-quick-action-sub">Valider les exploitations</div>
+              <div className="af-quick-action-sub">Valider les exploitants</div>
             </div>
           </Link>
 

@@ -16,27 +16,15 @@ export default function ProductInquiryModal({
 }) {
     const authUser = useSelector(selectUser);
 
-    const [form, setForm] = useState({
-        name: "",
-        businessName: "",
-        contact: "",
+    const [form, setForm] = useState(() => ({
+        name: authUser?.name || "",
+        businessName: authUser?.company_name || authUser?.business_name || "",
+        contact: authUser?.phone || authUser?.email || "",
         estimatedVolume: "",
         message: "",
-    });
+    }));
     const [submitted, setSubmitted] = useState(false);
     const [submitting, setSubmitting] = useState(false);
-
-    // Pré-remplissage avec les informations de l'acheteur connecté
-    useEffect(() => {
-        if (show && authUser) {
-            setForm((prev) => ({
-                ...prev,
-                name: prev.name || authUser.name || "",
-                businessName: prev.businessName || authUser.company_name || authUser.business_name || "",
-                contact: prev.contact || authUser.phone || authUser.email || "",
-            }));
-        }
-    }, [show, authUser]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -57,9 +45,9 @@ export default function ProductInquiryModal({
     const handleClose = () => {
         setSubmitted(false);
         setForm({
-            name: "",
-            businessName: "",
-            contact: "",
+            name: authUser?.name || "",
+            businessName: authUser?.company_name || authUser?.business_name || "",
+            contact: authUser?.phone || authUser?.email || "",
             estimatedVolume: "",
             message: "",
         });

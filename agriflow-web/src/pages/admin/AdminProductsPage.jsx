@@ -1,6 +1,6 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Modal, Form } from "react-bootstrap";
+import { Modal, Form, Alert } from "react-bootstrap";
 import {
   fetchProducts,
   disableProduct,
@@ -11,20 +11,27 @@ import {
 import {
   selectAdminProducts,
   selectAdminLoading,
+  selectAdminError,
 } from "../../app/store/slices/admin/adminSelectors";
-import { Badge, EmptyState, LoadingState } from "../../components/common";
+import { Badge, EmptyState, LoadingState, Button } from "../../components/common";
 
 /**
- * AdminProductsPage — Modération et gestion du catalogue (Design System AgriFlow)
+ * AdminProductsPage — Modération et gestion du catalogue agricole (Lot 11)
  */
 export default function AdminProductsPage() {
   const dispatch = useDispatch();
-  const products = useSelector(selectAdminProducts) || [];
+  const rawProducts = useSelector(selectAdminProducts);
+  const products = useMemo(() => rawProducts || [], [rawProducts]);
   const loading = useSelector(selectAdminLoading);
+  const error = useSelector(selectAdminError);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [filterAvailability, setFilterAvailability] = useState("all");
+  const [inspectProduct, setInspectProduct] = useState(null);
   const [editProduct, setEditProduct] = useState(null);
+  const [productToDelete, setProductToDelete] = useState(null);
+  const [feedbackMsg, setFeedbackMsg] = useState(null);
+
   const [form, setForm] = useState({ name: "", description: "" });
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
@@ -35,7 +42,8 @@ export default function AdminProductsPage() {
     dispatch(fetchProducts());
   }, [dispatch]);
 
-  const handleRowClick = (p) => {
+  const handleOpenEdit = (p) => {
+    setInspectProduct(null);
     setEditProduct(p);
     setForm({ name: p.name || "", description: p.description || "" });
     setImageFile(null);
@@ -53,7 +61,7 @@ export default function AdminProductsPage() {
     setImagePreview(URL.createObjectURL(file));
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!editProduct) return;
     setSaving(true);
 
@@ -62,44 +70,73 @@ export default function AdminProductsPage() {
     fd.append("description", form.description);
     if (imageFile) fd.append("image", imageFile);
 
-    dispatch(updateProduct({ id: editProduct.id, data: fd })).then(() => {
-      setSaving(false);
+    const res = await dispatch(updateProduct({ id: editProduct.id, data: fd }));
+    setSaving(false);
+    if (res.meta?.requestStatus === "fulfilled") {
+      setFeedbackMsg({ type: "success", text: `Le produit #${editProduct.id} a été mis à jour avec succès.` });
       setEditProduct(null);
       dispatch(fetchProducts());
-    });
-  };
-
-  const handleToggle = (e, p) => {
-    e.stopPropagation();
-    if (p.is_active || p.is_available) {
-      dispatch(disableProduct(p.id));
     } else {
-      dispatch(enableProduct(p.id));
+      setFeedbackMsg({ type: "danger", text: "Impossible de mettre à jour le produit." });
     }
   };
 
-  const handleDelete = (e, id) => {
+  const handleToggle = async (e, p) => {
     e.stopPropagation();
-    if (window.confirm("Voulez-vous vraiment supprimer ce produit du catalogue ?")) {
-      dispatch(deleteProduct(id));
+    const isCurrentlyActive = p.is_available !== false && p.is_active !== false;
+    let res;
+    if (isCurrentlyActive) {
+      res = await dispatch(disableProduct(p.id));
+      if (res.meta?.requestStatus === "fulfilled") {
+        setFeedbackMsg({ type: "info", text: `Le produit "${p.name}" a été désactivé du catalogue public.` });
+      }
+    } else {
+      res = await dispatch(enableProduct(p.id));
+      if (res.meta?.requestStatus === "fulfilled") {
+        setFeedbackMsg({ type: "success", text: `Le produit "${p.name}" est à nouveau disponible en vente.` });
+      }
     }
+    dispatch(fetchProducts());
   };
 
-  const filteredProducts = products.filter((p) => {
-    const matchesSearch =
-      !searchTerm ||
-      p.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.category?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.farmer?.name?.toLowerCase().includes(searchTerm.toLowerCase());
+  const handleConfirmDelete = async () => {
+    if (!productToDelete) return;
+    const res = await dispatch(deleteProduct(productToDelete.id));
+    if (res.meta?.requestStatus === "fulfilled") {
+      setFeedbackMsg({ type: "success", text: `Le produit #${productToDelete.id} a été retiré définitivement du catalogue.` });
+      dispatch(fetchProducts());
+    } else {
+      setFeedbackMsg({ type: "danger", text: "Échec de la suppression du produit." });
+    }
+    setProductToDelete(null);
+  };
 
-    const isAvailable = p.is_available !== false && p.is_active !== false;
-    const matchesAvail =
-      filterAvailability === "all" ||
-      (filterAvailability === "active" && isAvailable) ||
-      (filterAvailability === "inactive" && !isAvailable);
+  const activeProductsCount = products.filter(
+    (p) => p.is_available !== false && p.is_active !== false
+  ).length;
+  const disabledProductsCount = products.filter(
+    (p) => p.is_available === false || p.is_active === false
+  ).length;
 
-    return matchesSearch && matchesAvail;
-  });
+  const filteredProducts = useMemo(() => {
+    return products.filter((p) => {
+      const matchesSearch =
+        !searchTerm.trim() ||
+        p.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        p.category?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        p.category?.toLowerCase?.().includes(searchTerm.toLowerCase()) ||
+        p.farmer?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        p.user?.name?.toLowerCase().includes(searchTerm.toLowerCase());
+
+      const isAvailable = p.is_available !== false && p.is_active !== false;
+      const matchesAvail =
+        filterAvailability === "all" ||
+        (filterAvailability === "active" && isAvailable) ||
+        (filterAvailability === "inactive" && !isAvailable);
+
+      return matchesSearch && matchesAvail;
+    });
+  }, [products, searchTerm, filterAvailability]);
 
   return (
     <div className="af-dashboard-container">
@@ -113,54 +150,76 @@ export default function AdminProductsPage() {
             </Badge>
           </div>
           <p>
-            Modération du catalogue public : vérification des prix producteurs, qualité des fiches et disponibilité.
+            Modération du catalogue : vérification de la disponibilité, contrôle des prix producteurs et conformité des fiches.
           </p>
         </div>
       </div>
+
+      {/* Notifications */}
+      {feedbackMsg && (
+        <Alert
+          variant={feedbackMsg.type}
+          dismissible
+          onClose={() => setFeedbackMsg(null)}
+          className="rounded-3 shadow-sm mb-4"
+        >
+          {feedbackMsg.text}
+        </Alert>
+      )}
+
+      {error && (
+        <Alert variant="danger" className="rounded-3 shadow-sm mb-4">
+          {typeof error === "string" ? error : "Erreur de chargement des produits."}
+        </Alert>
+      )}
 
       {/* ── 2. Top Stats Overview ─────────────────────────────────────── */}
       <div className="af-stats-row">
         <div className="af-stat-card-featured">
           <div className="af-stat-card-top">
             <span className="af-stat-card-label">Total Produits</span>
+            <span className="fs-5">📦</span>
           </div>
           <div className="af-stat-value">{products.length}</div>
-          <div className="af-stat-pill">En base de données</div>
+          <div className="af-stat-pill">Fiches enregistrées</div>
         </div>
 
         <div className="af-stat-card-white">
           <div className="af-stat-card-top">
-            <span className="af-stat-card-label">Actifs en Ligne</span>
+            <span className="af-stat-card-label">Actifs en Vente</span>
+            <span className="fs-5">✅</span>
+          </div>
+          <div className="af-stat-value" style={{ color: "var(--af-success, #247a50)" }}>
+            {activeProductsCount}
+          </div>
+          <div className="af-stat-pill success">Visibles au catalogue</div>
+        </div>
+
+        <div className="af-stat-card-white">
+          <div className="af-stat-card-top">
+            <span className="af-stat-card-label">Désactivés / Hors Ligne</span>
+            <span className="fs-5">⏸️</span>
           </div>
           <div className="af-stat-value">
-            {products.filter((p) => p.is_available !== false && p.is_active !== false).length}
+            {disabledProductsCount}
           </div>
-          <div className="af-stat-pill success">Visibles aux acheteurs</div>
+          <span className="af-stat-subtitle-text">Modération ou rupture</span>
         </div>
 
         <div className="af-stat-card-white">
           <div className="af-stat-card-top">
-            <span className="af-stat-card-label">Suspendus / Épuisés</span>
+            <span className="af-stat-card-label">Traçabilité</span>
+            <span className="fs-5">🌱</span>
           </div>
-          <div className="af-stat-value">
-            {products.filter((p) => p.is_available === false || p.is_active === false).length}
+          <div className="af-stat-value" style={{ fontSize: "20px", marginTop: "4px" }}>
+            100% Terroir
           </div>
-          <span className="af-stat-subtitle-text">Désactivés ou hors stock</span>
-        </div>
-
-        <div className="af-stat-card-white">
-          <div className="af-stat-card-top">
-            <span className="af-stat-card-label">Prix Moyen / Unité</span>
-          </div>
-          <div className="af-stat-value" style={{ fontSize: "20px" }}>
-            Direct Producteur
-          </div>
-          <span className="af-stat-subtitle-text">Circuit court sans marge intermédiaire</span>
+          <span className="af-stat-subtitle-text">Direct producteur certifié</span>
         </div>
       </div>
 
       {/* ── 3. Filters & Search Bar ───────────────────────────────────── */}
-      <div className="af-panel-card p-3">
+      <div className="af-panel-card p-3 mb-4">
         <div className="d-flex flex-wrap gap-3 align-items-center justify-content-between">
           <div className="af-buyer-search-input-wrap" style={{ maxWidth: 380 }}>
             <svg
@@ -178,7 +237,7 @@ export default function AdminProductsPage() {
             <input
               type="text"
               className="af-buyer-search-input"
-              placeholder="Rechercher par nom de produit, catégorie..."
+              placeholder="Rechercher par produit, catégorie, exploitant..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -186,30 +245,29 @@ export default function AdminProductsPage() {
 
           <div className="af-category-chips-row">
             {[
-              { id: "all", label: "Tous les produits" },
-              { id: "active", label: "✓ En stock & actifs" },
-              { id: "inactive", label: "✗ Épuisés / Inactifs" },
-            ].map((chip) => (
-              <button
-                key={chip.id}
-                type="button"
-                className={`af-category-chip ${
-                  filterAvailability === chip.id ? "active" : ""
-                }`}
-                style={{
-                  backgroundColor:
-                    filterAvailability === chip.id ? "#15372F" : "#ffffff",
-                  color: filterAvailability === chip.id ? "#ffffff" : "#3b4e43",
-                  border:
-                    filterAvailability === chip.id
-                      ? "1px solid #15372F"
-                      : "1px solid #dce5df",
-                }}
-                onClick={() => setFilterAvailability(chip.id)}
-              >
-                {chip.label}
-              </button>
-            ))}
+              { id: "all", label: `Tous (${products.length})` },
+              { id: "active", label: `✓ En vente (${activeProductsCount})` },
+              { id: "inactive", label: `✗ Désactivés (${disabledProductsCount})` },
+            ].map((chip) => {
+              const isActive = filterAvailability === chip.id;
+              return (
+                <button
+                  key={chip.id}
+                  type="button"
+                  className={`af-category-chip ${isActive ? "active" : ""}`}
+                  style={{
+                    backgroundColor: isActive ? "var(--af-primary-forest, #15372F)" : "#ffffff",
+                    color: isActive ? "#ffffff" : "var(--af-ink-900, #1D2924)",
+                    border: isActive
+                      ? "1px solid var(--af-primary-forest, #15372F)"
+                      : "1px solid var(--af-border, #E2E9E3)",
+                  }}
+                  onClick={() => setFilterAvailability(chip.id)}
+                >
+                  {chip.label}
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>
@@ -218,7 +276,7 @@ export default function AdminProductsPage() {
       <div className="af-panel-card">
         <div className="af-panel-header">
           <div>
-            <h2 className="af-panel-title">Fiches Produits</h2>
+            <h2 className="af-panel-title">Fiches Produits Agricoles</h2>
             <span className="af-stat-subtitle-text">
               {filteredProducts.length} produit{filteredProducts.length > 1 ? "s" : ""} affiché{filteredProducts.length > 1 ? "s" : ""}
             </span>
@@ -233,42 +291,47 @@ export default function AdminProductsPage() {
               <thead>
                 <tr>
                   <th>ID</th>
-                  <th>Produit</th>
+                  <th>Produit & Catégorie</th>
                   <th>Exploitant</th>
                   <th>Région</th>
-                  <th>Prix Producteur</th>
-                  <th>Statut</th>
-                  <th className="text-end">Actions</th>
+                  <th>Prix de base</th>
+                  <th>Disponibilité</th>
+                  <th className="text-end">Modération</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredProducts.map((p) => {
                   const isActive = p.is_active !== false && p.is_available !== false;
+                  const displayImage = p.image || p.image_url;
 
                   return (
                     <tr
                       key={p.id}
-                      onClick={() => handleRowClick(p)}
+                      onClick={() => setInspectProduct(p)}
                       style={{ cursor: "pointer" }}
                     >
                       <td className="fw-bold text-muted">#{p.id}</td>
                       <td>
                         <div className="d-flex align-items-center gap-3">
                           <div
-                            className="af-list-item-avatar"
+                            className="af-list-item-avatar d-flex align-items-center justify-content-center"
                             style={{
                               backgroundColor: "#f4f7f5",
                               border: "1px solid #e1e9e3",
+                              width: 44,
+                              height: 44,
+                              borderRadius: 10,
+                              overflow: "hidden",
                             }}
                           >
-                            {p.image_url ? (
+                            {displayImage ? (
                               <img
-                                src={p.image_url}
+                                src={displayImage}
                                 alt={p.name}
-                                style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "10px" }}
+                                style={{ width: "100%", height: "100%", objectFit: "cover" }}
                               />
                             ) : (
-                              <span>🌿</span>
+                              <span style={{ fontSize: "1.2rem" }}>🌾</span>
                             )}
                           </div>
                           <div>
@@ -280,14 +343,14 @@ export default function AdminProductsPage() {
                         </div>
                       </td>
                       <td>
-                        <div className="fw-medium">{p.farmer?.name || p.user?.name || "Agriculteur"}</div>
+                        <div className="fw-medium">{p.farmer?.name || p.user?.name || "Exploitant"}</div>
                       </td>
                       <td>
-                        <small className="text-muted">{p.zone || p.region || "Maroc"}</small>
+                        <small className="text-muted">📍 {p.farmer?.zone || p.zone || "Maroc"}</small>
                       </td>
                       <td>
-                        <strong style={{ color: "var(--af-primary-forest)" }}>
-                          {p.price ? `${p.price} DH / ${p.unit || "kg"}` : "Sur devis"}
+                        <strong style={{ color: "var(--af-primary-forest, #15372F)" }}>
+                          {p.base_price ? `${Number(p.base_price).toFixed(2)} DH` : p.price ? `${Number(p.price).toFixed(2)} DH` : "Sur devis"}
                         </strong>
                       </td>
                       <td>
@@ -309,10 +372,25 @@ export default function AdminProductsPage() {
                           </button>
                           <button
                             type="button"
+                            className="btn btn-sm btn-outline-secondary rounded-pill px-2 py-1"
+                            style={{ fontSize: "0.78rem" }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleOpenEdit(p);
+                            }}
+                            title="Modifier"
+                          >
+                            ✏️
+                          </button>
+                          <button
+                            type="button"
                             className="btn btn-sm btn-outline-danger rounded-pill px-2 py-1"
                             style={{ fontSize: "0.78rem" }}
-                            onClick={(e) => handleDelete(e, p.id)}
-                            title="Supprimer"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setProductToDelete(p);
+                            }}
+                            title="Supprimer du catalogue"
                           >
                             🗑️
                           </button>
@@ -333,7 +411,99 @@ export default function AdminProductsPage() {
         )}
       </div>
 
-      {/* ── 5. Modal Modification Produit ──────────────────────────────── */}
+      {/* ── 5. Modal Inspection Produit ────────────────────────────────── */}
+      <Modal show={!!inspectProduct} onHide={() => setInspectProduct(null)} centered>
+        <Modal.Header closeButton style={{ borderBottom: "1px solid #edf2ee" }}>
+          <Modal.Title style={{ fontSize: "1.15rem", fontWeight: 700, color: "var(--af-primary-forest)" }}>
+            Fiche Produit #{inspectProduct?.id} — {inspectProduct?.name}
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body className="p-4">
+          {inspectProduct && (
+            <div className="d-flex flex-column gap-3 small">
+              <div className="d-flex align-items-center gap-3">
+                <div
+                  style={{
+                    width: 60,
+                    height: 60,
+                    borderRadius: 12,
+                    overflow: "hidden",
+                    backgroundColor: "#f4f7f5",
+                    display: "grid",
+                    placeItems: "center",
+                  }}
+                >
+                  {inspectProduct.image || inspectProduct.image_url ? (
+                    <img
+                      src={inspectProduct.image || inspectProduct.image_url}
+                      alt={inspectProduct.name}
+                      style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                    />
+                  ) : (
+                    <span style={{ fontSize: "1.8rem" }}>🌾</span>
+                  )}
+                </div>
+                <div>
+                  <h3 className="h6 fw-bold mb-1" style={{ color: "var(--af-green-950, #15372F)" }}>
+                    {inspectProduct.name}
+                  </h3>
+                  <Badge variant={inspectProduct.is_available !== false ? "success" : "neutral"} size="sm">
+                    {inspectProduct.is_available !== false ? "Disponible au catalogue" : "Désactivé"}
+                  </Badge>
+                </div>
+              </div>
+
+              <div>
+                <span className="text-muted d-block">Description :</span>
+                <p className="mb-0 text-dark">
+                  {inspectProduct.description || "Aucune description renseignée par le producteur."}
+                </p>
+              </div>
+
+              <div className="row g-2">
+                <div className="col-6">
+                  <span className="text-muted d-block">Exploitant propriétaire :</span>
+                  <strong>{inspectProduct.farmer?.name || inspectProduct.user?.name || "Producteur"}</strong>
+                </div>
+                <div className="col-6">
+                  <span className="text-muted d-block">Zone de récolte :</span>
+                  <span>📍 {inspectProduct.farmer?.zone || inspectProduct.zone || "Maroc"}</span>
+                </div>
+              </div>
+
+              <div className="row g-2">
+                <div className="col-6">
+                  <span className="text-muted d-block">Prix unitaire indicatif :</span>
+                  <strong style={{ color: "var(--af-primary-forest)" }}>
+                    {inspectProduct.base_price ? `${Number(inspectProduct.base_price).toFixed(2)} DH` : "Sur devis"}
+                  </strong>
+                </div>
+                <div className="col-6">
+                  <span className="text-muted d-block">Conditionnements :</span>
+                  <span>{inspectProduct.quantities?.length || 0} format(s)</span>
+                </div>
+              </div>
+            </div>
+          )}
+        </Modal.Body>
+        <Modal.Footer style={{ borderTop: "1px solid #edf2ee" }}>
+          <Button
+            variant="outline"
+            pill
+            onClick={() => {
+              const p = inspectProduct;
+              handleOpenEdit(p);
+            }}
+          >
+            ✏️ Modifier la fiche
+          </Button>
+          <Button variant="secondary" pill onClick={() => setInspectProduct(null)}>
+            Fermer
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* ── 6. Modal Modification Produit ──────────────────────────────── */}
       <Modal show={!!editProduct} onHide={() => setEditProduct(null)} centered>
         <Modal.Header closeButton style={{ borderBottom: "1px solid #edf2ee" }}>
           <Modal.Title style={{ fontSize: "1.15rem", fontWeight: 700, color: "var(--af-primary-forest)" }}>
@@ -343,13 +513,14 @@ export default function AdminProductsPage() {
         <Modal.Body className="p-4">
           <Form>
             <Form.Group className="mb-3">
-              <Form.Label className="small fw-semibold text-muted">Nom du produit</Form.Label>
+              <Form.Label className="small fw-semibold text-muted">Nom du produit *</Form.Label>
               <Form.Control
                 name="name"
                 value={form.name}
                 onChange={handleChange}
                 placeholder="Nom du produit"
                 className="rounded-3"
+                required
               />
             </Form.Group>
             <Form.Group className="mb-3">
@@ -360,7 +531,7 @@ export default function AdminProductsPage() {
                 name="description"
                 value={form.description}
                 onChange={handleChange}
-                placeholder="Description du produit et spécificités"
+                placeholder="Description du produit et spécificités agronomiques"
                 className="rounded-3"
               />
             </Form.Group>
@@ -386,21 +557,41 @@ export default function AdminProductsPage() {
           </Form>
         </Modal.Body>
         <Modal.Footer style={{ borderTop: "1px solid #edf2ee" }}>
-          <button
-            type="button"
-            className="af-btn-secondary-pill"
-            onClick={() => setEditProduct(null)}
-          >
+          <Button variant="outline" pill onClick={() => setEditProduct(null)}>
             Annuler
-          </button>
-          <button
-            type="button"
-            className="af-btn-primary-pill"
+          </Button>
+          <Button
+            variant="primary"
+            pill
             onClick={handleSave}
-            disabled={saving}
+            disabled={saving || !form.name.trim()}
           >
             {saving ? "Enregistrement..." : "Enregistrer les modifications"}
-          </button>
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* ── 7. Modal Confirmation Suppression ─────────────────────────── */}
+      <Modal show={!!productToDelete} onHide={() => setProductToDelete(null)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title className="h6 fw-bold text-danger">
+            Supprimer le produit du catalogue
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <p className="mb-0">
+            Êtes-vous certain de vouloir supprimer définitivement{" "}
+            <strong>{productToDelete?.name}</strong> (#{productToDelete?.id}) ?
+            Cette action est irréversible et supprimera la fiche du catalogue public.
+          </p>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="outline" pill onClick={() => setProductToDelete(null)}>
+            Annuler
+          </Button>
+          <Button variant="danger" pill onClick={handleConfirmDelete}>
+            Confirmer la suppression
+          </Button>
         </Modal.Footer>
       </Modal>
     </div>

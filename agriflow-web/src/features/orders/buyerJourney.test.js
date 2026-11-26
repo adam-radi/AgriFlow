@@ -1,14 +1,9 @@
 import { describe, it, expect } from "vitest";
 import orderReducer, {
     cancelOrder,
-    fetchOrders,
-    createOrder,
 } from "./orderSlice";
 import cartReducer, {
     fetchCart,
-    addToCart,
-    updateCartItem,
-    removeFromCart,
     clearCart,
 } from "./cartSlice";
 
