@@ -14,10 +14,11 @@ use App\Http\Controllers\Api\DeliveryController;
 use App\Http\Controllers\Api\FarmerDashboardController;
 use App\Http\Controllers\Api\CustomerDashboardController;
 use App\Http\Controllers\Api\AdminController;
+use App\Http\Controllers\Api\PurchaseInquiryController;
 
 /*
 |--------------------------------------------------------------------------
-| Routes publiques — Authentification
+| Routes publiques â€” Authentification
 |--------------------------------------------------------------------------
 */
 
@@ -37,10 +38,10 @@ Route::prefix('auth')->group(function () {
 
 /*
 |--------------------------------------------------------------------------
-| Routes publiques — Catalogue produits (sans authentification)
+| Routes publiques â€” Catalogue produits (sans authentification)
 |--------------------------------------------------------------------------
 |
-| Les futures routes GET du catalogue produits seront déclarées ici.
+| Les futures routes GET du catalogue produits seront dÃ©clarÃ©es ici.
 |
 */
 
@@ -49,7 +50,7 @@ Route::get('/public/products/{id}', [PublicController::class, 'productDetails'])
 
 /*
 |--------------------------------------------------------------------------
-| Routes nécessitant une authentification (Sanctum)
+| Routes nÃ©cessitant une authentification (Sanctum)
 |--------------------------------------------------------------------------
 */
 
@@ -114,7 +115,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
         /*
          * Les futures routes de gestion agricole
-         * seront ajoutées dans ce groupe.
+         * seront ajoutÃ©es dans ce groupe.
          */
 
     });
@@ -132,7 +133,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
         /*
          * Les futures routes de gestion acheteur
-         * seront ajoutées dans ce groupe.
+         * seront ajoutÃ©es dans ce groupe.
          */
 
     });
@@ -145,7 +146,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('products/{product}/quantities', [ProductController::class, 'manageQuantity']);
 
     /*
-     * Récoltes
+     * RÃ©coltes
      */
 
     Route::get('/harvest', [HarvestController::class, 'index']);
@@ -165,6 +166,19 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/orders/{order}', [OrderController::class, 'show']);
     Route::post('/orders/{order}/cancel', [OrderController::class, 'cancel']);
     Route::post('/orders/{order}/status/{status}', [OrderController::class, 'updateStatus']);
+
+    /*
+     * Demandes d'Achat, NÃ©gociation & Transactions Directes (Lot 12)
+     */
+    Route::get('/purchase-inquiries', [PurchaseInquiryController::class, 'index']);
+    Route::post('/purchase-inquiries', [PurchaseInquiryController::class, 'store']);
+    Route::get('/purchase-inquiries/{inquiry}', [PurchaseInquiryController::class, 'show']);
+    Route::post('/purchase-inquiries/{inquiry}/counter-offer', [PurchaseInquiryController::class, 'counterOffer']);
+    Route::post('/purchase-inquiries/{inquiry}/accept', [PurchaseInquiryController::class, 'accept']);
+    Route::post('/purchase-inquiries/{inquiry}/confirm', [PurchaseInquiryController::class, 'confirm']);
+    Route::post('/purchase-inquiries/{inquiry}/reject', [PurchaseInquiryController::class, 'reject']);
+    Route::post('/purchase-inquiries/{inquiry}/cancel', [PurchaseInquiryController::class, 'cancel']);
+    Route::post('/purchase-inquiries/{inquiry}/delivery-status/{status}', [PurchaseInquiryController::class, 'updateDelivery']);
 
     /*
      * Panier

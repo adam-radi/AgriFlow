@@ -59,6 +59,12 @@ import ClientProfilePage from "../../pages/client/ClientProfilePage";
 import ClientVerificationPage from "../../pages/client/ClientVerificationPage";
 import AdminVerificationsPage from "../../pages/admin/AdminVerificationsPage";
 
+// Inquiries & Direct Negotiation pages (Lot 12)
+import FarmerInquiriesPage from "../../pages/farmer/inquiries/FarmerInquiriesPage";
+import FarmerInquiryDetailsPage from "../../pages/farmer/inquiries/FarmerInquiryDetailsPage";
+import ClientInquiriesPage from "../../pages/client/inquiries/ClientInquiriesPage";
+import ClientInquiryDetailsPage from "../../pages/client/inquiries/ClientInquiryDetailsPage";
+
 function AppRouter() {
     return (
         <Router>
@@ -127,6 +133,8 @@ function AppRouter() {
                     />
                     <Route path="/farmer/profile" element={<FarmerProfilePage />} />
                     <Route path="/farmer/verification" element={<FarmerVerificationPage />} />
+                    <Route path="/farmer/inquiries" element={<FarmerInquiriesPage />} />
+                    <Route path="/farmer/inquiries/:id" element={<FarmerInquiryDetailsPage />} />
                 </Route>
 
                 {/* ── Admin Dashboard & Management (Protected) ──────── */}
@@ -164,6 +172,8 @@ function AppRouter() {
                     <Route path="/client/checkout" element={<CheckoutPage />} />
                     <Route path="/client/orders" element={<OrdersPage />} />
                     <Route path="/client/orders/:id" element={<OrderDetailsPage />} />
+                    <Route path="/client/inquiries" element={<ClientInquiriesPage />} />
+                    <Route path="/client/inquiries/:id" element={<ClientInquiryDetailsPage />} />
                     <Route path="/client/profile" element={<ClientProfilePage />} />
                     <Route path="/client/verification" element={<ClientVerificationPage />} />
                 </Route>

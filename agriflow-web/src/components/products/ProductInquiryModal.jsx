@@ -1,12 +1,14 @@
-import { useState, useEffect } from "react";
-import { useSelector } from "react-redux";
-import { Modal, Row, Col } from "react-bootstrap";
+import { useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { Link } from "react-router-dom";
+import { Modal, Row, Col, Alert } from "react-bootstrap";
 import { Button, Input } from "../common";
 import { selectUser } from "../../features/auth/authSelectors";
+import { createInquiry } from "../../features/inquiries/inquirySlice";
 
 /**
- * ProductInquiryModal — Dialogue de demande de cotation directe auprès de l'exploitant
- * Permet aux acheteurs B2B de solliciter des volumes spécifiques sans intermédiaire.
+ * ProductInquiryModal — Dialogue de négociation directe et demande d'achat B2B
+ * Connecté au backend Laravel (Lot 12 - Axe A).
  */
 export default function ProductInquiryModal({
     show,
@@ -14,41 +16,69 @@ export default function ProductInquiryModal({
     product,
     farmer,
 }) {
+    const dispatch = useDispatch();
     const authUser = useSelector(selectUser);
 
     const [form, setForm] = useState(() => ({
-        name: authUser?.name || "",
-        businessName: authUser?.company_name || authUser?.business_name || "",
-        contact: authUser?.phone || authUser?.email || "",
-        estimatedVolume: "",
+        quantity: "100",
+        proposed_price: product?.price ? String(product.price) : "",
+        delivery_zone: authUser?.city || "Casablanca",
+        desired_delivery_date: new Date(Date.now() + 7 * 86400000).toISOString().split("T")[0],
         message: "",
     }));
-    const [submitted, setSubmitted] = useState(false);
+
     const [submitting, setSubmitting] = useState(false);
+    const [submitted, setSubmitted] = useState(false);
+    const [errorMessage, setErrorMessage] = useState(null);
+    const [createdInquiryId, setCreatedInquiryId] = useState(null);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
         setForm((prev) => ({ ...prev, [name]: value }));
+        if (errorMessage) setErrorMessage(null);
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         setSubmitting(true);
+        setErrorMessage(null);
 
-        // Simulation de prise en charge instantanée côté client
-        setTimeout(() => {
+        try {
+            const payload = {
+                product_id: product?.id,
+                quantity: parseFloat(form.quantity),
+                proposed_price: parseFloat(form.proposed_price || product?.price || 0),
+                delivery_zone: form.delivery_zone,
+                desired_delivery_date: form.desired_delivery_date || null,
+                message: form.message,
+            };
+
+            const resultAction = await dispatch(createInquiry(payload));
+            if (createInquiry.fulfilled.match(resultAction)) {
+                setCreatedInquiryId(resultAction.payload?.id || null);
+                setSubmitted(true);
+            } else {
+                const errPayload = resultAction.payload;
+                const msg = typeof errPayload === "string" 
+                    ? errPayload 
+                    : (errPayload?.message || errPayload?.product_id?.[0] || "Une erreur est survenue lors de l'envoi.");
+                setErrorMessage(msg);
+            }
+        } catch (err) {
+            setErrorMessage(err.message || "Erreur réseau.");
+        } finally {
             setSubmitting(false);
-            setSubmitted(true);
-        }, 400);
+        }
     };
 
     const handleClose = () => {
         setSubmitted(false);
+        setErrorMessage(null);
         setForm({
-            name: authUser?.name || "",
-            businessName: authUser?.company_name || authUser?.business_name || "",
-            contact: authUser?.phone || authUser?.email || "",
-            estimatedVolume: "",
+            quantity: "100",
+            proposed_price: product?.price ? String(product.price) : "",
+            delivery_zone: authUser?.city || "Casablanca",
+            desired_delivery_date: new Date(Date.now() + 7 * 86400000).toISOString().split("T")[0],
             message: "",
         });
         onHide();
@@ -67,18 +97,24 @@ export default function ProductInquiryModal({
                         className="text-uppercase fw-bold small"
                         style={{ color: "var(--af-green-700, #398565)", letterSpacing: "0.05em" }}
                     >
-                        Mise en relation directe
+                        Négociation directe B2B
                     </span>
                     <Modal.Title
                         className="fw-bold mt-1"
                         style={{ color: "var(--af-green-950, #15372F)", fontSize: "1.35rem" }}
                     >
-                        Demander une cotation · {product?.name}
+                        Demander une offre · {product?.name}
                     </Modal.Title>
                 </div>
             </Modal.Header>
 
             <Modal.Body className="p-4">
+                {errorMessage && (
+                    <Alert variant="danger" className="rounded-3 py-2 px-3 small mb-3">
+                        {errorMessage}
+                    </Alert>
+                )}
+
                 {submitted ? (
                     <div className="text-center py-4">
                         <div
@@ -94,64 +130,88 @@ export default function ProductInquiryModal({
                             ✓
                         </div>
                         <h4 className="fw-bold mb-2" style={{ color: "var(--af-green-950, #15372F)" }}>
-                            Demande transmise avec succès !
+                            Demande d&apos;achat transmise !
                         </h4>
                         <p className="small text-muted mb-4">
-                            L&apos;exploitant {farmer?.name ? `(${farmer.name})` : "partenaire"} a été notifié de votre besoin.
-                            Notre équipe de coordination régionale reste également à votre disposition.
+                            L&apos;exploitant {farmer?.name ? `(${farmer.name})` : "partenaire"} a reçu votre proposition de prix et de volume. Vous pouvez suivre l&apos;avancement et échanger directement des contre-propositions.
                         </p>
-                        <Button variant="primary" pill onClick={handleClose} className="w-100">
-                            Fermer
-                        </Button>
+                        <div className="d-flex flex-column gap-2">
+                            {createdInquiryId ? (
+                                <Button as={Link} to={`/client/inquiries/${createdInquiryId}`} variant="primary" pill className="w-100">
+                                    Consulter la négociation en direct →
+                                </Button>
+                            ) : (
+                                <Button as={Link} to="/client/inquiries" variant="primary" pill className="w-100">
+                                    Voir mes demandes d&apos;achat →
+                                </Button>
+                            )}
+                            <Button variant="ghost" onClick={handleClose} className="w-100 text-muted">
+                                Continuer mes recherches
+                            </Button>
+                        </div>
                     </div>
                 ) : (
                     <>
-                        <p className="small text-muted mb-3">
-                            Renseignez vos coordonnées professionnelles et les volumes estimés pour que le producteur
-                            puisse vous confirmer les disponibilités et les tarifs dégressifs.
-                        </p>
+                        <div className="p-3 rounded-3 mb-3" style={{ backgroundColor: "var(--af-gray-50, #f8f9fa)", border: "1px solid var(--af-gray-200, #e9ecef)" }}>
+                            <div className="d-flex justify-content-between align-items-center small text-muted">
+                                <span>Prix catalogue de référence :</span>
+                                <strong className="text-dark">{product?.price ? `${product.price} DH / kg` : "Non spécifié"}</strong>
+                            </div>
+                            <div className="d-flex justify-content-between align-items-center small text-muted mt-1">
+                                <span>Producteur :</span>
+                                <strong className="text-dark">{farmer?.name || "Exploitant partenaire"}</strong>
+                            </div>
+                        </div>
 
                         <form onSubmit={handleSubmit}>
                             <Row className="g-3">
                                 <Col xs={12} sm={6}>
                                     <Input
-                                        label="Votre Nom & Prénom *"
-                                        name="name"
-                                        value={form.name}
+                                        label="Quantité souhaitée (kg) *"
+                                        name="quantity"
+                                        type="number"
+                                        step="1"
+                                        min="1"
+                                        value={form.quantity}
                                         onChange={handleChange}
-                                        placeholder="Ex: Karim Tazi"
+                                        placeholder="Ex: 500"
                                         required
                                     />
                                 </Col>
 
                                 <Col xs={12} sm={6}>
                                     <Input
-                                        label="Établissement / Entreprise"
-                                        name="businessName"
-                                        value={form.businessName}
+                                        label="Prix proposé (DH / kg) *"
+                                        name="proposed_price"
+                                        type="number"
+                                        step="0.1"
+                                        min="0.1"
+                                        value={form.proposed_price}
                                         onChange={handleChange}
-                                        placeholder="Ex: Marché Central / Resto Bio"
-                                    />
-                                </Col>
-
-                                <Col xs={12} sm={6}>
-                                    <Input
-                                        label="Téléphone ou E-mail *"
-                                        name="contact"
-                                        value={form.contact}
-                                        onChange={handleChange}
-                                        placeholder="06... ou contact@..."
+                                        placeholder={`Ex: ${product?.price || 12}`}
                                         required
                                     />
                                 </Col>
 
                                 <Col xs={12} sm={6}>
                                     <Input
-                                        label="Volume estimé"
-                                        name="estimatedVolume"
-                                        value={form.estimatedVolume}
+                                        label="Zone de livraison *"
+                                        name="delivery_zone"
+                                        value={form.delivery_zone}
                                         onChange={handleChange}
-                                        placeholder="Ex: 500 kg / 20 caisses"
+                                        placeholder="Ex: Casablanca, Fès, Agadir"
+                                        required
+                                    />
+                                </Col>
+
+                                <Col xs={12} sm={6}>
+                                    <Input
+                                        label="Date souhaitée *"
+                                        name="desired_delivery_date"
+                                        type="date"
+                                        value={form.desired_delivery_date}
+                                        onChange={handleChange}
+                                        required
                                     />
                                 </Col>
 
@@ -159,11 +219,11 @@ export default function ProductInquiryModal({
                                     <Input
                                         as="textarea"
                                         rows={3}
-                                        label="Message ou questions particulières"
+                                        label="Message ou conditions particulières"
                                         name="message"
                                         value={form.message}
                                         onChange={handleChange}
-                                        placeholder="Précisez vos dates d'approvisionnement ou vos contraintes logistiques..."
+                                        placeholder="Précisez votre calibre souhaité, emballage (caisses, sacs) ou conditions de déchargement..."
                                     />
                                 </Col>
 
@@ -176,7 +236,7 @@ export default function ProductInquiryModal({
                                         isLoading={submitting}
                                         className="w-100"
                                     >
-                                        Envoyer ma demande à l&apos;exploitant →
+                                        Soumettre la proposition à l&apos;agriculteur →
                                     </Button>
                                 </Col>
                             </Row>

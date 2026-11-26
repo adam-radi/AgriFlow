@@ -66,6 +66,16 @@ const ENDPOINTS = {
         SUBMIT_FARMER: "/verification/farmer",
         SUBMIT_BUYER: "/verification/buyer",
     },
+    INQUIRIES: {
+        BASE: "/purchase-inquiries",
+        DETAILS: (id) => `/purchase-inquiries/${id}`,
+        COUNTER_OFFER: (id) => `/purchase-inquiries/${id}/counter-offer`,
+        ACCEPT: (id) => `/purchase-inquiries/${id}/accept`,
+        CONFIRM: (id) => `/purchase-inquiries/${id}/confirm`,
+        REJECT: (id) => `/purchase-inquiries/${id}/reject`,
+        CANCEL: (id) => `/purchase-inquiries/${id}/cancel`,
+        DELIVERY_STATUS: (id, status) => `/purchase-inquiries/${id}/delivery-status/${status}`,
+    },
 };
 
 export default ENDPOINTS;
