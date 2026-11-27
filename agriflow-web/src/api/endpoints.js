@@ -76,6 +76,11 @@ const ENDPOINTS = {
         CANCEL: (id) => `/purchase-inquiries/${id}/cancel`,
         DELIVERY_STATUS: (id, status) => `/purchase-inquiries/${id}/delivery-status/${status}`,
     },
+    NOTIFICATIONS: {
+        BASE: "/notifications",
+        READ: (id) => `/notifications/${id}/read`,
+        READ_ALL: "/notifications/read-all",
+    },
 };
 
 export default ENDPOINTS;

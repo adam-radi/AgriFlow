@@ -20,7 +20,7 @@ class InquiryService
         $productId = $request->input('product_id');
         $product = Product::findOrFail($productId);
 
-        if ($product->is_available === false || $product->is_active === false) {
+        if ($product->is_available === false) {
             throw ValidationException::withMessages([
                 'product_id' => 'Ce produit agricole n\'est actuellement pas disponible.',
             ]);
@@ -98,7 +98,12 @@ class InquiryService
                 'message'                => $message,
             ]);
 
-            return $inquiry->load(['buyer', 'farmer', 'product', 'harvest', 'quantityStandard', 'negotiations.sender']);
+            $loaded = $inquiry->load(['buyer', 'farmer', 'product', 'harvest', 'quantityStandard', 'negotiations.sender']);
+            try {
+                $loaded->farmer?->notify(new \App\Notifications\InquiryCreatedNotification($loaded));
+            } catch (\Throwable $e) {}
+
+            return $loaded;
         });
     }
 
@@ -204,7 +209,12 @@ class InquiryService
                 'message'                => "Proposition acceptée par {$user->name}. En attente de confirmation définitive.",
             ]);
 
-            return $inquiry->fresh(['buyer', 'farmer', 'product', 'harvest', 'quantityStandard', 'negotiations.sender']);
+            $fresh = $inquiry->fresh(['buyer', 'farmer', 'product', 'harvest', 'quantityStandard', 'negotiations.sender']);
+            try {
+                $fresh->buyer?->notify(new \App\Notifications\InquiryAcceptedNotification($fresh));
+            } catch (\Throwable $e) {}
+
+            return $fresh;
         });
     }
 
@@ -233,7 +243,13 @@ class InquiryService
                 'message'                => "Accord commercial confirmé définitivement par {$user->name}. Lot prêt pour préparation.",
             ]);
 
-            return $inquiry->fresh(['buyer', 'farmer', 'product', 'harvest', 'quantityStandard', 'negotiations.sender']);
+            $fresh = $inquiry->fresh(['buyer', 'farmer', 'product', 'harvest', 'quantityStandard', 'negotiations.sender']);
+            try {
+                $target = $user->id === $fresh->buyer_id ? $fresh->farmer : $fresh->buyer;
+                $target?->notify(new \App\Notifications\InquiryConfirmedNotification($fresh));
+            } catch (\Throwable $e) {}
+
+            return $fresh;
         });
     }
 
@@ -263,7 +279,12 @@ class InquiryService
                 'message'                => "Motif de refus : {$reason}",
             ]);
 
-            return $inquiry->fresh(['buyer', 'farmer', 'product', 'harvest', 'quantityStandard', 'negotiations.sender']);
+            $fresh = $inquiry->fresh(['buyer', 'farmer', 'product', 'harvest', 'quantityStandard', 'negotiations.sender']);
+            try {
+                $fresh->buyer?->notify(new \App\Notifications\InquiryRejectedNotification($fresh, $reason));
+            } catch (\Throwable $e) {}
+
+            return $fresh;
         });
     }
 

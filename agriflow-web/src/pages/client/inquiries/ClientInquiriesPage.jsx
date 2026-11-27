@@ -102,10 +102,9 @@ export default function ClientInquiriesPage() {
                                 {[
                                     { key: "all", label: "Toutes" },
                                     { key: "pending", label: "En attente" },
-                                    { key: "negotiating", label: "En négociation" },
+                                    { key: "accepted", label: "Acceptées" },
                                     { key: "confirmed", label: "Confirmées" },
-                                    { key: "in_delivery", label: "En livraison" },
-                                    { key: "delivered", label: "Livrées" },
+                                    { key: "rejected", label: "Refusées" },
                                 ].map((tab) => (
                                     <button
                                         key={tab.key}

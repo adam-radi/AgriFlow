@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\FarmerDashboardController;
 use App\Http\Controllers\Api\CustomerDashboardController;
 use App\Http\Controllers\Api\AdminController;
 use App\Http\Controllers\Api\PurchaseInquiryController;
+use App\Http\Controllers\Api\NotificationController;
 
 /*
 |--------------------------------------------------------------------------
@@ -179,6 +180,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/purchase-inquiries/{inquiry}/reject', [PurchaseInquiryController::class, 'reject']);
     Route::post('/purchase-inquiries/{inquiry}/cancel', [PurchaseInquiryController::class, 'cancel']);
     Route::post('/purchase-inquiries/{inquiry}/delivery-status/{status}', [PurchaseInquiryController::class, 'updateDelivery']);
+
+    /*
+     * Notifications (Lot 12 - Axe Prioritaire)
+     */
+    Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
+    Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead']);
 
     /*
      * Panier

@@ -103,10 +103,10 @@ export default function FarmerInquiriesPage() {
                             <div className="d-flex flex-wrap gap-2 justify-content-md-end">
                                 {[
                                     { key: "all", label: "Toutes" },
-                                    { key: "active", label: "À traiter" },
+                                    { key: "pending", label: "À traiter (En attente)" },
+                                    { key: "accepted", label: "Acceptées" },
                                     { key: "confirmed", label: "Confirmées" },
-                                    { key: "in_delivery", label: "En expédition" },
-                                    { key: "delivered", label: "Livrées" },
+                                    { key: "rejected", label: "Refusées" },
                                 ].map((tab) => (
                                     <button
                                         key={tab.key}

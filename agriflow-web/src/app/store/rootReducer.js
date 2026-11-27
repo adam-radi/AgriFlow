@@ -9,6 +9,7 @@ import adminReducer from "../store/slices/admin/adminSlice";
 import profileReducer from "../../features/profile/profileSlice";
 import verificationReducer from "../../features/verification/verificationSlice";
 import inquiryReducer from "../../features/inquiries/inquirySlice";
+import notificationReducer from "../../features/notifications/notificationSlice";
 
 const rootReducer = combineReducers({
    auth: authReducer,
@@ -21,6 +22,7 @@ const rootReducer = combineReducers({
    profile: profileReducer,
    verification: verificationReducer,
    inquiries: inquiryReducer,
+   notifications: notificationReducer,
 })
 
 export default rootReducer;
