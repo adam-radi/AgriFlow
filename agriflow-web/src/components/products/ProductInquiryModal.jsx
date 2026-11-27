@@ -133,12 +133,12 @@ export default function ProductInquiryModal({
                             Demande d&apos;achat transmise !
                         </h4>
                         <p className="small text-muted mb-4">
-                            L&apos;exploitant {farmer?.name ? `(${farmer.name})` : "partenaire"} a reçu votre proposition de prix et de volume. Vous pouvez suivre l&apos;avancement et échanger directement des contre-propositions.
+                            L&apos;exploitant {farmer?.name ? `(${farmer.name})` : "partenaire"} a reçu votre proposition de volume et de prix. Vous pouvez suivre la décision et gérer la demande directement.
                         </p>
                         <div className="d-flex flex-column gap-2">
                             {createdInquiryId ? (
                                 <Button as={Link} to={`/client/inquiries/${createdInquiryId}`} variant="primary" pill className="w-100">
-                                    Consulter la négociation en direct →
+                                    Gérer la négociation →
                                 </Button>
                             ) : (
                                 <Button as={Link} to="/client/inquiries" variant="primary" pill className="w-100">

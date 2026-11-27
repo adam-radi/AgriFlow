@@ -5,6 +5,7 @@ import { logoutUser } from "../../features/auth/authThunks";
 import { selectUser } from "../../features/auth/authSelectors";
 import { selectVerificationStatus } from "../../features/verification/verificationSelectors";
 import NotificationBell from "../notifications/NotificationBell";
+import Logo from "./Logo";
 
 export default function RoleHeader({
   user: propUser = null,
@@ -94,6 +95,14 @@ export default function RoleHeader({
         >
           ☰
         </button>
+
+        <Link
+          to="/"
+          className="d-lg-none d-flex align-items-center text-decoration-none me-2"
+          aria-label="Retour à l'accueil AgriFlow"
+        >
+          <Logo height={30} to={false} />
+        </Link>
 
         <form
           className="af-role-header-search"

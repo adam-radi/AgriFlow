@@ -242,7 +242,7 @@ export default function FarmerInquiriesPage() {
                                                     pill
                                                     size="sm"
                                                 >
-                                                    Traiter la négociation →
+                                                    Gérer la négociation →
                                                 </Button>
                                             </div>
                                         </div>

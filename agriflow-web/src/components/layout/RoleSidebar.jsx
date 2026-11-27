@@ -24,20 +24,20 @@ export default function RoleSidebar({
       aria-label={`Navigation ${roleLabel}`}
     >
       {/* Brand Header */}
-      <div className="af-sidebar-brand">
-        <Link
-          to="/"
-          className="af-sidebar-logo-link"
-          aria-label="Retour à l'accueil AgriFlow"
-        >
-          <Logo height={32} />
-        </Link>
+      <Link
+        to="/"
+        className="af-sidebar-brand text-decoration-none"
+        aria-label="Retour à l'accueil AgriFlow"
+      >
+        <div className="af-sidebar-logo-link">
+          <Logo height={38} to={false} />
+        </div>
 
         <div className="af-sidebar-brand-content">
           <strong>{brand}</strong>
           <span>{subtitle}</span>
         </div>
-      </div>
+      </Link>
 
       {/* Navigation List */}
       <nav className="af-sidebar-navigation">
