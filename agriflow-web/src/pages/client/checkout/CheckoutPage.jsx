@@ -1,8 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, Link } from "react-router-dom";
-import { Row, Col, Table, Alert } from "react-bootstrap";
-import { createOrder, clearOrderError, clearOrderSuccess } from "../../../features/orders/orderSlice";
+import { Row, Col, Alert } from "react-bootstrap";
 import { fetchCart, clearCart } from "../../../features/orders/cartSlice";
 import {
     selectCartItems,
@@ -10,59 +9,38 @@ import {
     selectCartCount,
     selectCartLoading,
 } from "../../../features/orders/orderSelectors";
-import { selectUser } from "../../../features/auth/authSelectors";
-import { Button, LoadingState, Badge } from "../../../components/common";
-
-const MOROCCAN_REGIONS = [
-    "Casablanca-Settat",
-    "Rabat-Salé-Kénitra",
-    "Souss-Massa",
-    "Marrakech-Safi",
-    "Fès-Meknès",
-    "Tanger-Tétouan-Al Hoceïma",
-    "Béni Mellal-Khénifra",
-    "Oriental",
-    "Drâa-Tafilalet",
-    "Guelmim-Oued Noun",
-    "Laâyoune-Sakia El Hamra",
-    "Dakhla-Oued Ed-Dahab",
-];
+import { createInquiry } from "../../../features/inquiries/inquirySlice";
+import { Button, LoadingState, Badge, EmptyState } from "../../../components/common";
 
 /**
- * CheckoutPage — Finalisation et validation de la commande B2B (Lot 10)
+ * RequestSummaryPage – Récapitulatif de la demande d'approvisionnement B2B
+ *
+ * Remplace le Checkout e-commerce classique (cassé).
+ * Soumet une PurchaseInquiry par article du panier via le workflow B2B Lot 12.
+ *
+ * Route : /client/checkout (inchangée pour ne pas casser les liens existants)
  */
 export default function CheckoutPage() {
     const dispatch = useDispatch();
     const navigate = useNavigate();
 
-    const user = useSelector(selectUser);
     const rawCartItems = useSelector(selectCartItems);
     const cartItems = useMemo(() => rawCartItems || [], [rawCartItems]);
     const cartTotal = useSelector(selectCartTotal) || 0;
     const cartCount = useSelector(selectCartCount) || 0;
     const cartLoading = useSelector(selectCartLoading);
-    const orderLoading = useSelector((state) => state.orders.loading);
-    const orderError = useSelector((state) => state.orders.error);
 
     const [hasLoadedCart, setHasLoadedCart] = useState(false);
-    const defaultZone = cartItems[0]?.harvest?.product?.farmer?.zone || user?.city || "Casablanca-Settat";
-    const [zone, setZone] = useState("");
-    const [deliveryDate, setDeliveryDate] = useState("");
-    const [notes, setNotes] = useState("");
-
-    const currentZone = zone || defaultZone;
+    const [submitting, setSubmitting] = useState(false);
+    const [submitError, setSubmitError] = useState(null);
+    const [message, setMessage] = useState("");
+    const [deliveryZone, setDeliveryZone] = useState("");
 
     useEffect(() => {
-        dispatch(fetchCart()).finally(() => {
-            setHasLoadedCart(true);
-        });
-        return () => {
-            dispatch(clearOrderError());
-            dispatch(clearOrderSuccess());
-        };
+        dispatch(fetchCart()).finally(() => setHasLoadedCart(true));
     }, [dispatch]);
 
-    // Redirection automatique si le panier est vide une fois chargé
+    // Redirection si panier vide une fois chargé
     useEffect(() => {
         if (hasLoadedCart && !cartLoading && cartItems.length === 0) {
             navigate("/client/cart");
@@ -71,37 +49,88 @@ export default function CheckoutPage() {
 
     async function handleSubmit(e) {
         e.preventDefault();
-        dispatch(clearOrderError());
+        setSubmitError(null);
+        setSubmitting(true);
 
-        const payload = {
-            zone: currentZone,
-            delivery_date: deliveryDate || null,
-            items: cartItems.map((item) => ({
-                harvest_id: item.harvest_id,
-                quantity_standard_id: item.quantity_standard_id,
+        const errors = [];
+
+        for (const item of cartItems) {
+            const productId = item.harvest?.product_id ?? item.product_id;
+            const unitPrice = Number(item.unit_price ?? 0);
+
+            if (!productId) {
+                errors.push(`Article #${item.id} : produit introuvable.`);
+                continue;
+            }
+            if (unitPrice <= 0) {
+                errors.push(
+                    `Article #${item.id} : le prix unitaire est invalide. Veuillez mettre à jour votre panier.`
+                );
+                continue;
+            }
+
+            const payload = {
+                product_id: productId,
+                harvest_id: item.harvest_id ?? null,
+                quantity_standard_id: item.quantity_standard_id ?? null,
                 quantity: item.quantity,
-                scheduled_harvest_date: item.harvest?.start_date || null,
-            })),
-        };
+                proposed_price: unitPrice,
+                delivery_zone: deliveryZone.trim() || null,
+                desired_delivery_date: null,
+                message: message.trim() || null,
+            };
 
-        const result = await dispatch(createOrder(payload));
-        if (result.meta?.requestStatus === "fulfilled") {
-            dispatch(clearCart());
-            navigate("/client/orders");
+            const result = await dispatch(createInquiry(payload));
+            if (result.meta?.requestStatus === "rejected") {
+                const errMsg =
+                    typeof result.payload === "string"
+                        ? result.payload
+                        : JSON.stringify(result.payload);
+                errors.push(`${item.harvest?.product?.name ?? "Produit"} : ${errMsg}`);
+            }
         }
+
+        setSubmitting(false);
+
+        if (errors.length > 0) {
+            setSubmitError(errors.join("\n"));
+            return;
+        }
+
+        // Tout est soumis — vider le panier et naviguer
+        await dispatch(clearCart());
+        navigate("/client/inquiries");
     }
 
+    // — États de chargement et vide —
     if (cartLoading && !hasLoadedCart) {
         return (
             <div className="af-dashboard-container">
-                <LoadingState message="Préparation de votre commande..." />
+                <LoadingState message="Préparation de votre récapitulatif..." />
+            </div>
+        );
+    }
+
+    if (hasLoadedCart && cartItems.length === 0) {
+        return (
+            <div className="af-dashboard-container">
+                <EmptyState
+                    icon="🛒"
+                    title="Votre panier est vide"
+                    description="Ajoutez des produits depuis le catalogue avant de finaliser votre demande."
+                    action={
+                        <Button variant="primary" pill onClick={() => navigate("/products")}>
+                            Explorer le catalogue
+                        </Button>
+                    }
+                />
             </div>
         );
     }
 
     return (
         <div className="af-dashboard-container">
-            {/* ── 1. En-tête ────────────────────────────────────────────── */}
+            {/* ── 1. En-tête ───────────────────────────────────────────────── */}
             <div className="af-dashboard-header-row">
                 <div className="af-dashboard-title-group">
                     <div className="d-flex align-items-center gap-2 mb-1 flex-wrap">
@@ -109,181 +138,244 @@ export default function CheckoutPage() {
                             ← Retour au panier
                         </Link>
                         <span className="text-muted">/</span>
-                        <h1>Validation de la Commande</h1>
+                        <h1>Récapitulatif de la Demande</h1>
+                        <Badge variant="primary" size="md">
+                            {cartCount} lot{cartCount > 1 ? "s" : ""}
+                        </Badge>
                     </div>
                     <p>
-                        Renseignez votre région de livraison et confirmez votre approvisionnement direct.
+                        Vérifiez votre sélection et envoyez votre demande directement aux exploitants.
+                        Chaque agriculteur sera notifié et pourra accepter ou négocier les conditions.
                     </p>
                 </div>
             </div>
 
-            {/* Alerte d'erreur de commande */}
-            {orderError && (
-                <Alert
-                    variant="danger"
-                    className="rounded-3 shadow-sm mb-4"
-                    dismissible
-                    onClose={() => dispatch(clearOrderError())}
-                >
-                    {typeof orderError === "string"
-                        ? orderError
-                        : orderError?.message || "Échec de la validation de la commande. Veuillez vérifier vos articles."}
+            {/* Alerte d'erreur de soumission */}
+            {submitError && (
+                <Alert variant="danger" className="rounded-3 shadow-sm mb-4">
+                    <strong>Certaines demandes n'ont pas pu être soumises :</strong>
+                    <pre className="mb-0 mt-2 small" style={{ whiteSpace: "pre-wrap" }}>
+                        {submitError}
+                    </pre>
                 </Alert>
             )}
 
-            {/* ── 2. Formulaire & Récapitulatif ─────────────────────────── */}
             <form onSubmit={handleSubmit}>
                 <Row className="g-4">
-                    {/* Colonne gauche : Articles et informations de livraison */}
+                    {/* ── 2. Articles sélectionnés ──────────────────────────── */}
                     <Col lg={7}>
-                        {/* Récapitulatif des articles */}
                         <div className="af-panel-card mb-4">
                             <div className="af-panel-header mb-3">
-                                <h2 className="af-panel-title">Lots à Confirmer</h2>
-                                <Badge variant="primary" size="sm">
-                                    {cartItems.length} lot(s)
-                                </Badge>
+                                <h2 className="af-panel-title">Produits sélectionnés</h2>
+                                <span className="af-stat-subtitle-text">
+                                    {cartItems.length} référence{cartItems.length > 1 ? "s" : ""}
+                                </span>
                             </div>
 
-                            <div className="table-responsive">
-                                <Table className="align-middle af-dashboard-table mb-0">
-                                    <thead>
-                                        <tr>
-                                            <th>Produit</th>
-                                            <th>Pack</th>
-                                            <th className="text-center">Qté</th>
-                                            <th className="text-end">Prix</th>
-                                            <th className="text-end">Sous-total</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {cartItems.map((item) => (
-                                            <tr key={item.id}>
-                                                <td>
-                                                    <strong>
-                                                        {item.harvest?.product?.name || "Produit agricole"}
-                                                    </strong>
-                                                </td>
-                                                <td>
-                                                    <span className="badge bg-light text-dark border">
-                                                        {item.quantity_standard?.label || "Standard"}
-                                                    </span>
-                                                </td>
-                                                <td className="text-center fw-bold">{item.quantity}</td>
-                                                <td className="text-end">
-                                                    {Number(item.unit_price).toFixed(2)} DH
-                                                </td>
-                                                <td className="text-end fw-bold" style={{ color: "var(--af-primary-forest, #15372F)" }}>
-                                                    {Number(item.subtotal || 0).toFixed(2)} DH
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </Table>
+                            <div className="d-flex flex-column gap-3">
+                                {cartItems.map((item) => {
+                                    const productName =
+                                        item.harvest?.product?.name ||
+                                        `Produit #${item.harvest?.product_id ?? item.product_id}`;
+                                    const packLabel =
+                                        item.quantity_standard?.label || "Conditionnement standard";
+                                    const unitPrice = Number(item.unit_price ?? 0);
+                                    const subtotal =
+                                        item.subtotal != null
+                                            ? Number(item.subtotal)
+                                            : unitPrice * item.quantity;
+                                    const farmerName =
+                                        item.harvest?.product?.farmer?.name ||
+                                        item.harvest?.product?.farmer?.company_name ||
+                                        "Exploitant agricole";
+
+                                    return (
+                                        <div
+                                            key={item.id}
+                                            className="d-flex align-items-center justify-content-between gap-3 p-3 rounded-4"
+                                            style={{
+                                                backgroundColor: "var(--af-canvas, #F6F8F5)",
+                                                border: "1px solid var(--af-border, #E2E9E3)",
+                                            }}
+                                        >
+                                            {/* Icône + infos */}
+                                            <div className="d-flex align-items-center gap-3">
+                                                <div
+                                                    className="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0"
+                                                    style={{
+                                                        width: "44px",
+                                                        height: "44px",
+                                                        backgroundColor: "var(--af-green-100, #E8F2EC)",
+                                                        fontSize: "1.3rem",
+                                                    }}
+                                                >
+                                                    🌾
+                                                </div>
+                                                <div>
+                                                    <div
+                                                        className="fw-bold small mb-0"
+                                                        style={{ color: "var(--af-green-950, #15372F)" }}
+                                                    >
+                                                        {productName}
+                                                    </div>
+                                                    <div className="text-muted" style={{ fontSize: "0.78rem" }}>
+                                                        {packLabel} · {item.quantity} lot
+                                                        {item.quantity > 1 ? "s" : ""} · {farmerName}
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Prix */}
+                                            <div className="text-end flex-shrink-0">
+                                                <div
+                                                    className="fw-bold"
+                                                    style={{ color: "var(--af-primary-forest, #15372F)" }}
+                                                >
+                                                    {subtotal.toFixed(2)} DH
+                                                </div>
+                                                <div className="text-muted" style={{ fontSize: "0.75rem" }}>
+                                                    {unitPrice.toFixed(2)} DH / lot
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
                             </div>
                         </div>
 
-                        {/* Coordonnées logistiques */}
+                        {/* ── 3. Informations complémentaires ────────────────── */}
                         <div className="af-panel-card">
-                            <h2 className="af-panel-title mb-3">Coordonnées de Livraison</h2>
-
-                            <Row className="g-3">
-                                <Col md={6}>
+                            <h2 className="af-panel-title mb-3">Informations complémentaires</h2>
+                            <div className="d-flex flex-column gap-3">
+                                <div>
                                     <label className="form-label fw-semibold small text-muted">
-                                        Région de destination *
-                                    </label>
-                                    <select
-                                        className="form-select rounded-3"
-                                        value={zone}
-                                        onChange={(e) => setZone(e.target.value)}
-                                        required
-                                    >
-                                        <option value="">Sélectionnez une région...</option>
-                                        {MOROCCAN_REGIONS.map((r) => (
-                                            <option key={r} value={r}>
-                                                {r}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </Col>
-
-                                <Col md={6}>
-                                    <label className="form-label fw-semibold small text-muted">
-                                        Date de livraison souhaitée
+                                        Zone de livraison souhaitée
+                                        <span className="text-muted fw-normal ms-1">(optionnel)</span>
                                     </label>
                                     <input
-                                        type="date"
+                                        type="text"
                                         className="form-control rounded-3"
-                                        value={deliveryDate}
-                                        onChange={(e) => setDeliveryDate(e.target.value)}
-                                        min={new Date().toISOString().split("T")[0]}
+                                        placeholder="Ex : Casablanca, Rabat-Salé, Marrakech…"
+                                        value={deliveryZone}
+                                        onChange={(e) => setDeliveryZone(e.target.value)}
+                                        maxLength={255}
                                     />
-                                </Col>
-
-                                <Col xs={12}>
+                                </div>
+                                <div>
                                     <label className="form-label fw-semibold small text-muted">
-                                        Instructions particulières ou contraintes d&apos;accès
+                                        Message pour les exploitants
+                                        <span className="text-muted fw-normal ms-1">(optionnel)</span>
                                     </label>
                                     <textarea
                                         className="form-control rounded-3"
                                         rows={3}
-                                        placeholder="Ex: Quai de déchargement accessible le matin, contact responsable réception..."
-                                        value={notes}
-                                        onChange={(e) => setNotes(e.target.value)}
+                                        placeholder="Contraintes de conditionnement, calendrier de réception, volume annuel prévu…"
+                                        value={message}
+                                        onChange={(e) => setMessage(e.target.value)}
+                                        maxLength={2000}
                                     />
-                                </Col>
-                            </Row>
+                                    <div className="text-end text-muted mt-1" style={{ fontSize: "0.75rem" }}>
+                                        {message.length}/2000
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </Col>
 
-                    {/* Colonne droite : Synthèse et validation finale */}
+                    {/* ── 4. Synthèse et validation ─────────────────────────── */}
                     <Col lg={5}>
-                        <div className="af-panel-card">
-                            <h2 className="af-panel-title mb-3">Synthèse Financière</h2>
+                        <div className="af-panel-card" style={{ position: "sticky", top: "1.5rem" }}>
+                            <h2 className="af-panel-title mb-3">Récapitulatif</h2>
 
-                            <div className="d-flex flex-column gap-2 mb-3">
+                            {/* Totaux */}
+                            <div className="d-flex flex-column gap-2 mb-4">
+                                <div className="d-flex justify-content-between text-muted small">
+                                    <span>Références sélectionnées</span>
+                                    <span className="fw-semibold text-dark">
+                                        {cartItems.length} article{cartItems.length > 1 ? "s" : ""}
+                                    </span>
+                                </div>
                                 <div className="d-flex justify-content-between text-muted small">
                                     <span>Total conditionnements</span>
-                                    <span className="fw-semibold text-dark">{cartCount} lot(s)</span>
+                                    <span className="fw-semibold text-dark">
+                                        {cartCount} lot{cartCount > 1 ? "s" : ""}
+                                    </span>
                                 </div>
                                 <div className="d-flex justify-content-between text-muted small">
-                                    <span>Logistique & Acheminement</span>
-                                    <span className="text-success fw-semibold">Inclus</span>
-                                </div>
-                                <div className="d-flex justify-content-between text-muted small">
-                                    <span>Mode de règlement</span>
-                                    <span className="fw-semibold text-dark">À réception / Virement</span>
+                                    <span>Demandes à envoyer</span>
+                                    <span className="fw-semibold text-dark">{cartItems.length}</span>
                                 </div>
 
                                 <hr className="my-2" style={{ borderColor: "var(--af-border, #E2E9E3)" }} />
 
                                 <div className="d-flex justify-content-between align-items-center">
-                                    <span className="fw-bold" style={{ color: "var(--af-green-950, #15372F)" }}>
-                                        Total Net à Payer
+                                    <span
+                                        className="fw-bold"
+                                        style={{ color: "var(--af-green-950, #15372F)" }}
+                                    >
+                                        Montant estimé
                                     </span>
                                     <span
                                         className="fs-3 fw-bold"
                                         style={{ color: "var(--af-primary-forest, #15372F)" }}
                                     >
-                                        {Number(cartTotal).toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} DH
+                                        {Number(cartTotal).toLocaleString("fr-FR", {
+                                            minimumFractionDigits: 2,
+                                            maximumFractionDigits: 2,
+                                        })}{" "}
+                                        DH
                                     </span>
                                 </div>
                             </div>
 
+                            {/* Bloc de réassurance */}
+                            <div
+                                className="p-3 rounded-3 mb-4"
+                                style={{
+                                    backgroundColor: "var(--af-green-50, #F4F9F6)",
+                                    border: "1px solid var(--af-green-200, #C4DFD1)",
+                                }}
+                            >
+                                <div className="d-flex align-items-start gap-2 mb-2">
+                                    <span>📋</span>
+                                    <span className="small text-dark">
+                                        <strong>Pas de paiement immédiat.</strong> Votre demande est
+                                        transmise à chaque exploitant qui dispose de 48h pour vous répondre.
+                                    </span>
+                                </div>
+                                <div className="d-flex align-items-start gap-2 mb-2">
+                                    <span>🤝</span>
+                                    <span className="small text-dark">
+                                        <strong>Accord direct.</strong> Vous confirmez uniquement après
+                                        acceptation de l'exploitant.
+                                    </span>
+                                </div>
+                                <div className="d-flex align-items-start gap-2">
+                                    <span>🔔</span>
+                                    <span className="small text-dark">
+                                        <strong>Notifications en temps réel</strong> à chaque étape.
+                                    </span>
+                                </div>
+                            </div>
+
+                            {/* CTA */}
                             <Button
                                 type="submit"
                                 variant="primary"
                                 pill
                                 size="lg"
                                 className="w-100 py-3 fw-bold mb-3"
-                                isLoading={orderLoading}
-                                disabled={orderLoading || cartItems.length === 0}
+                                isLoading={submitting}
+                                disabled={submitting || cartItems.length === 0}
                             >
-                                Confirmer la commande directe →
+                                {submitting
+                                    ? "Envoi en cours…"
+                                    : `Envoyer ${cartItems.length > 1 ? `${cartItems.length} demandes` : "la demande"} →`}
                             </Button>
 
                             <div className="text-center text-muted small">
-                                En confirmant, votre commande est directement transmise à l&apos;exploitant agricole qui validera la disponibilité de la récolte.
+                                En envoyant, chaque exploitant reçoit une notification et peut
+                                accepter, refuser ou vous proposer d'autres conditions.
                             </div>
                         </div>
                     </Col>

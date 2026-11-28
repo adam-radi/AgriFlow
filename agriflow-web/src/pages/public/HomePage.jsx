@@ -1,4 +1,5 @@
 import HomeHero from "../../components/home/HomeHero";
+import HomeBrandIdentity from "../../components/home/HomeBrandIdentity";
 import HomeFeaturedProducts from "../../components/home/HomeFeaturedProducts";
 import HomeCategories from "../../components/home/HomeCategories";
 import HomeAbout from "../../components/home/HomeAbout";
@@ -26,22 +27,25 @@ export default function HomePage() {
             {/* 2. Hero Section */}
             <HomeHero />
 
-            {/* 3. Sélection de produits agricoles disponibles */}
+            {/* 3. Identité de marque — mission B2B, publics cibles */}
+            <HomeBrandIdentity />
+
+            {/* 4. Sélection de produits agricoles disponibles */}
             <HomeFeaturedProducts />
 
-            {/* 4. Catégories agricoles régionales */}
+            {/* 5. Catégories agricoles régionales */}
             <HomeCategories />
 
-            {/* 5. Présentation d'AgriFlow — About */}
+            {/* 6. Présentation d'AgriFlow — About */}
             <HomeAbout />
 
-            {/* 6. Section dédiée aux agriculteurs et producteurs */}
+            {/* 7. Section dédiée aux agriculteurs et producteurs */}
             <HomeFarmerSection />
 
-            {/* 7. Section dédiée aux acheteurs professionnels */}
+            {/* 8. Section dédiée aux acheteurs professionnels */}
             <HomeBuyerSection />
 
-            {/* 8. Contact & Support */}
+            {/* 9. Contact & Support */}
             <HomeContact />
         </main>
     );

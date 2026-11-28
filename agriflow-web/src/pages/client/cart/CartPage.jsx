@@ -140,7 +140,7 @@ export default function CartPage() {
                                 className="w-100 py-3 fw-bold"
                                 onClick={() => navigate("/client/checkout")}
                             >
-                                Passer à la commande →
+                                Finaliser ma demande →
                             </Button>
                         </div>
                     </Col>
